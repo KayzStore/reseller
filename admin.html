@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KAYZ — Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --void:#0a0c17; --panel:#12142a; --panel-2:#181b38; --line:#2a2d55;
+    --violet:#9b5cff; --violet-dim:#6e46b8; --pink:#ff5ca8; --amber:#ffb454;
+    --text:#eef0fb; --muted:#8a8fbd; --good:#5ee6a8; --bad:#ff6b6b;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;min-height:100vh;
+    background:radial-gradient(ellipse 900px 500px at 15% -5%, rgba(155,92,255,0.16), transparent 60%), var(--void);
+    color:var(--text);font-family:'Inter',sans-serif;-webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:560px;margin:0 auto;padding:24px 20px 80px;}
+  .logo{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:19px;margin-bottom:6px;}
+  .logo span{color:var(--violet);}
+  .tag{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);letter-spacing:1px;}
+
+  /* login */
+  #loginScreen{min-height:80vh;display:flex;align-items:center;justify-content:center;}
+  .login-card{
+    width:100%;max-width:360px;background:linear-gradient(180deg,var(--panel),var(--panel-2));
+    border:1px solid var(--line);border-radius:20px;padding:32px 26px;text-align:center;
+  }
+  .login-icon{font-size:34px;margin-bottom:10px;}
+  .login-title{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:20px;margin:0 0 6px;}
+  .login-sub{color:var(--muted);font-size:13.5px;margin:0 0 22px;}
+  .login-card input{
+    width:100%;padding:13px 14px;margin-bottom:12px;border-radius:12px;border:1px solid var(--line);
+    background:rgba(0,0,0,0.3);color:var(--text);font-family:'Inter',sans-serif;font-size:14.5px;outline:none;
+  }
+  .login-card input:focus{border-color:var(--violet);}
+  .login-btn{
+    width:100%;padding:14px;border:none;border-radius:12px;
+    background:linear-gradient(90deg,var(--violet),var(--pink));color:#fff;
+    font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:15px;cursor:pointer;
+  }
+  .login-err{color:var(--bad);font-family:'JetBrains Mono',monospace;font-size:12px;margin-top:12px;display:none;}
+  .login-err.show{display:block;}
+
+  /* dashboard */
+  #dashboard{display:none;}
+  header{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;}
+  .logout-btn{
+    background:none;border:1px solid var(--line);color:var(--muted);padding:8px 14px;border-radius:10px;
+    font-family:'JetBrains Mono',monospace;font-size:12px;cursor:pointer;
+  }
+  h1{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:24px;margin:0 0 4px;}
+  .sub{color:var(--muted);font-size:13.5px;margin:0 0 26px;}
+
+  .section{
+    background:linear-gradient(180deg,var(--panel),var(--panel-2));border:1px solid var(--line);
+    border-radius:18px;padding:20px 20px 8px;margin-bottom:18px;
+  }
+  .section-title{
+    font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:13px;letter-spacing:1px;
+    text-transform:uppercase;color:var(--pink);margin-bottom:16px;
+  }
+  .svc-row{display:grid;grid-template-columns:1fr 90px 90px;gap:10px;align-items:center;margin-bottom:12px;}
+  .svc-row label{font-size:13.5px;color:var(--text);}
+  .svc-row input{
+    padding:9px 10px;border-radius:9px;border:1px solid var(--line);background:rgba(0,0,0,0.3);
+    color:var(--text);font-family:'JetBrains Mono',monospace;font-size:13px;outline:none;width:100%;
+  }
+  .svc-row input:focus{border-color:var(--violet);}
+  .col-labels{display:grid;grid-template-columns:1fr 90px 90px;gap:10px;margin-bottom:8px;}
+  .col-labels span{font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--muted);text-transform:uppercase;}
+
+  .wa-field{margin-bottom:16px;}
+  .wa-field label{display:block;font-size:13.5px;margin-bottom:8px;}
+  .wa-field input{
+    width:100%;padding:12px 13px;border-radius:11px;border:1px solid var(--line);
+    background:rgba(0,0,0,0.3);color:var(--text);font-family:'JetBrains Mono',monospace;font-size:14px;outline:none;
+  }
+
+  .save-bar{
+    position:sticky;bottom:0;display:flex;gap:10px;padding:16px 0 4px;
+    background:linear-gradient(180deg, transparent, var(--void) 40%);
+  }
+  .save-btn{
+    flex:1;padding:15px;border:none;border-radius:13px;
+    background:linear-gradient(90deg,var(--pink),var(--violet));color:#fff;
+    font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:15px;cursor:pointer;
+  }
+  .reset-btn{
+    padding:15px 18px;border:1px solid var(--line);border-radius:13px;background:transparent;
+    color:var(--muted);font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:14px;cursor:pointer;
+  }
+  .save-toast{
+    text-align:center;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--good);
+    margin-top:8px;opacity:0;transition:opacity .3s ease;
+  }
+  .save-toast.show{opacity:1;}
+
+  .note{
+    font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);
+    background:rgba(255,180,84,0.08);border:1px dashed rgba(255,180,84,0.3);
+    padding:12px 14px;border-radius:12px;margin-bottom:20px;line-height:1.6;
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <div id="loginScreen">
+    <div class="login-card">
+      <div class="login-icon">🔒</div>
+      <h2 class="login-title">KAYZ<span style="color:var(--violet)">.</span>ID Admin</h2>
+      <p class="login-sub">Halaman ini khusus admin. Masukkan akun kamu.</p>
+      <input type="text" id="loginUser" placeholder="Username" autocomplete="off">
+      <input type="password" id="loginPass" placeholder="Password" autocomplete="off">
+      <button class="login-btn" id="loginBtn">Masuk</button>
+      <div class="login-err" id="loginErr">✕ Username atau password salah.</div>
+    </div>
+  </div>
+
+  <div id="dashboard">
+    <header>
+      <div>
+        <div class="logo">KAYZ<span>.</span>ID</div>
+        <div class="tag">ADMIN PANEL</div>
+      </div>
+      <button class="logout-btn" id="logoutBtn">Keluar</button>
+    </header>
+
+    <h1>Atur Tarif Suntik Sosmed</h1>
+    <p class="sub">Ubah harga per satuan & minimal order tiap layanan. Perubahan langsung berlaku di halaman kalkulator.</p>
+
+    <div class="note">⚠️ Ini proteksi sederhana di sisi browser (bukan sistem login yang aman secara teknis). Cukup buat mencegah pengunjung biasa iseng ubah harga, tapi jangan dipakai untuk data sensitif.</div>
+
+    <div class="section">
+      <div class="section-title">📷 Instagram (IG)</div>
+      <div class="col-labels"><span>Layanan</span><span>Rp/Satuan</span><span>Min. Beli</span></div>
+      <div class="svc-row"><label>Like</label><input type="number" id="ig_like_rate"><input type="number" id="ig_like_min"></div>
+      <div class="svc-row"><label>Views</label><input type="number" id="ig_views_rate"><input type="number" id="ig_views_min"></div>
+      <div class="svc-row"><label>Followers</label><input type="number" id="ig_followers_rate"><input type="number" id="ig_followers_min"></div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">🎵 TikTok (TT)</div>
+      <div class="col-labels"><span>Layanan</span><span>Rp/Satuan</span><span>Min. Beli</span></div>
+      <div class="svc-row"><label>Like</label><input type="number" id="tt_like_rate"><input type="number" id="tt_like_min"></div>
+      <div class="svc-row"><label>Views</label><input type="number" id="tt_views_rate"><input type="number" id="tt_views_min"></div>
+      <div class="svc-row"><label>Followers</label><input type="number" id="tt_followers_rate"><input type="number" id="tt_followers_min"></div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">💬 WhatsApp (WA)</div>
+      <div class="col-labels"><span>Layanan</span><span>Rp/Satuan</span><span>Min. Beli</span></div>
+      <div class="svc-row"><label>Pengikut</label><input type="number" id="wa_pengikut_rate"><input type="number" id="wa_pengikut_min"></div>
+      <div class="svc-row"><label>Reaction</label><input type="number" id="wa_reaction_rate"><input type="number" id="wa_reaction_min"></div>
+      <div class="svc-row"><label>Polling Vote</label><input type="number" id="wa_vote_rate"><input type="number" id="wa_vote_min"></div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">📞 Nomor WhatsApp Order</div>
+      <div class="wa-field">
+        <label>Nomor tujuan (format 62xxxxxxxxxx)</label>
+        <input type="text" id="wa_number" placeholder="6285142017734">
+      </div>
+    </div>
+
+    <div class="save-bar">
+      <button class="reset-btn" id="resetBtn">Reset Default</button>
+      <button class="save-btn" id="saveBtn">Simpan Perubahan</button>
+    </div>
+    <div class="save-toast" id="saveToast">✓ Tersimpan — buka/refresh halaman kalkulator untuk lihat perubahan.</div>
+  </div>
+
+</div>
+
+<script>
+  const ADMIN_USER = 'kayz';
+  const ADMIN_PASS = 'Kkayz1212';
+  const AUTH_KEY = 'kayz_admin_auth';
+  const SETTINGS_KEY = 'kayz_settings';
+
+  const DEFAULTS = {
+    ig_like_rate: 10, ig_like_min: 10,
+    ig_views_rate: 1, ig_views_min: 100,
+    ig_followers_rate: 50, ig_followers_min: 20,
+    tt_like_rate: 10, tt_like_min: 10,
+    tt_views_rate: 1, tt_views_min: 100,
+    tt_followers_rate: 50, tt_followers_min: 10,
+    wa_pengikut_rate: 10, wa_pengikut_min: 10,
+    wa_reaction_rate: 1, wa_reaction_min: 10,
+    wa_vote_rate: 40, wa_vote_min: 10,
+    wa_number: '6285142017734'
+  };
+
+  const loginScreen = document.getElementById('loginScreen');
+  const dashboard = document.getElementById('dashboard');
+  const loginUser = document.getElementById('loginUser');
+  const loginPass = document.getElementById('loginPass');
+  const loginBtn = document.getElementById('loginBtn');
+  const loginErr = document.getElementById('loginErr');
+  const logoutBtn = document.getElementById('logoutBtn');
+  const saveBtn = document.getElementById('saveBtn');
+  const resetBtn = document.getElementById('resetBtn');
+  const saveToast = document.getElementById('saveToast');
+
+  function showDashboard(){
+    loginScreen.style.display = 'none';
+    dashboard.style.display = 'block';
+    loadSettingsIntoForm();
+  }
+
+  function tryLogin(){
+    if(loginUser.value.trim() === ADMIN_USER && loginPass.value === ADMIN_PASS){
+      try { localStorage.setItem(AUTH_KEY, '1'); } catch(e) {}
+      loginErr.classList.remove('show');
+      showDashboard();
+    } else {
+      loginErr.classList.add('show');
+    }
+  }
+
+  loginBtn.addEventListener('click', tryLogin);
+  loginPass.addEventListener('keydown', (e) => { if(e.key === 'Enter') tryLogin(); });
+
+  logoutBtn.addEventListener('click', () => {
+    try { localStorage.removeItem(AUTH_KEY); } catch(e) {}
+    dashboard.style.display = 'none';
+    loginScreen.style.display = 'flex';
+    loginUser.value = '';
+    loginPass.value = '';
+  });
+
+  function getSettings(){
+    try {
+      const raw = localStorage.getItem(SETTINGS_KEY);
+      return raw ? {...DEFAULTS, ...JSON.parse(raw)} : {...DEFAULTS};
+    } catch(e) {
+      return {...DEFAULTS};
+    }
+  }
+
+  function loadSettingsIntoForm(){
+    const s = getSettings();
+    Object.keys(DEFAULTS).forEach(key => {
+      const el = document.getElementById(key);
+      if(el) el.value = s[key];
+    });
+  }
+
+  saveBtn.addEventListener('click', () => {
+    const s = {};
+    Object.keys(DEFAULTS).forEach(key => {
+      const el = document.getElementById(key);
+      if(!el) return;
+      s[key] = key === 'wa_number' ? el.value.trim() : Number(el.value);
+    });
+    try {
+      localStorage.setItem(SETTINGS_KEY, JSON.stringify(s));
+      saveToast.classList.add('show');
+      setTimeout(() => saveToast.classList.remove('show'), 3000);
+    } catch(e) {
+      alert('Gagal menyimpan, coba lagi.');
+    }
+  });
+
+  resetBtn.addEventListener('click', () => {
+    if(confirm('Reset semua tarif ke pengaturan default?')){
+      try { localStorage.removeItem(SETTINGS_KEY); } catch(e) {}
+      loadSettingsIntoForm();
+    }
+  });
+
+  // auto-login if session already authenticated on this browser
+  try {
+    if(localStorage.getItem(AUTH_KEY) === '1'){
+      showDashboard();
+    }
+  } catch(e) { /* localStorage blocked */ }
+</script>
+</body>
+</html>
