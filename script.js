@@ -306,6 +306,7 @@ moveSpotlight(step.target);
 
 function moveSpotlight(target){
 const box = document.getElementById('tutHighlight');
+box.classList.remove('show');
 if(!target){
 const cx = window.innerWidth / 2;
 const cy = window.innerHeight / 2;
@@ -313,16 +314,14 @@ box.style.top = cy + 'px';
 box.style.left = cx + 'px';
 box.style.width = '0px';
 box.style.height = '0px';
-box.classList.add('show');
+requestAnimationFrame(() => box.classList.add('show'));
 return;
 }
 const ids = Array.isArray(target) ? target : [target];
 const els = ids.map(id => document.getElementById(id)).filter(Boolean);
 if(els.length === 0){
-box.classList.remove('show');
 return;
 }
-setTimeout(() => {
 els[0].scrollIntoView({behavior:'smooth', block:'center'});
 setTimeout(() => {
 const rects = els.map(el => el.getBoundingClientRect());
@@ -336,8 +335,7 @@ box.style.left = (left - pad) + 'px';
 box.style.width = (right - left + pad * 2) + 'px';
 box.style.height = (bottom - top + pad * 2) + 'px';
 box.classList.add('show');
-}, 300);
-}, 50);
+}, 450);
 }
 function openTutorial(){
 tutIndex = 0;
@@ -350,12 +348,17 @@ document.getElementById('tutHighlight').classList.remove('show');
 try { localStorage.setItem('kayz_suntik_tutorial_seen', '1'); } catch(e) {}
 }
 tutNext.addEventListener('click', () => {
+tutNext.disabled = true;
+document.getElementById('tutHighlight').classList.remove('show');
+setTimeout(() => {
 if(tutIndex < tutSteps.length - 1){
 tutIndex++;
 renderTutStep();
 } else {
 closeTutorial();
 }
+tutNext.disabled = false;
+}, 1000);
 });
 tutBack.addEventListener('click', () => {
 if(tutIndex > 0){
