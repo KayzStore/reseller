@@ -1,0 +1,335 @@
+// Ambil harga & kontak dari prices.js (harus di-load SEBELUM file ini di index.html)
+function ov(key, fallback){
+  const val = (typeof KAYZ_PRICES !== 'undefined') ? KAYZ_PRICES[key] : undefined;
+  return (val !== undefined && val !== null && val !== '') ? val : fallback;
+}
+
+const SERVICES = {
+'Instagram (IG)': [
+{label:'Like', rate:Number(ov('ig_like_rate',10)), unit:'like', min:Number(ov('ig_like_min',10)), presets:[10,100,250,500]},
+{label:'Views', rate:Number(ov('ig_views_rate',1)), unit:'views', min:Number(ov('ig_views_min',100)), presets:[100,1000,5000,10000]},
+{label:'Followers', rate:Number(ov('ig_followers_rate',50)), unit:'followers', min:Number(ov('ig_followers_min',20)), presets:[20,100,250,500]}
+],
+'TikTok (TT)': [
+{label:'Like', rate:Number(ov('tt_like_rate',10)), unit:'like', min:Number(ov('tt_like_min',10)), presets:[10,100,250,500]},
+{label:'Views', rate:Number(ov('tt_views_rate',1)), unit:'views', min:Number(ov('tt_views_min',100)), presets:[100,500,1000,5000]},
+{label:'Followers', rate:Number(ov('tt_followers_rate',50)), unit:'followers', min:Number(ov('tt_followers_min',10)), presets:[10,50,100,500]}
+],
+'WhatsApp (WA)': [
+{label:'Pengikut', rate:Number(ov('wa_pengikut_rate',10)), unit:'pengikut', min:Number(ov('wa_pengikut_min',10)), presets:[10,100,250,500]},
+{label:'Reaction', rate:Number(ov('wa_reaction_rate',1)), unit:'reaction', min:Number(ov('wa_reaction_min',10)), presets:[10,100,1000,5000], note:'Pilih mix acak atau 1 emoji'},
+{label:'Polling Vote', rate:Number(ov('wa_vote_rate',40)), unit:'vote', min:Number(ov('wa_vote_min',10)), presets:[10,25,50,100]}
+]
+};
+const platformRow = document.getElementById('platformRow');
+const layananRow = document.getElementById('layananRow');
+const reactionField = document.getElementById('reactionField');
+const reactionRow = document.getElementById('reactionRow');
+const rateHint = document.getElementById('rateHint');
+const jumlah = document.getElementById('jumlah');
+const qtyQuick = document.getElementById('qtyQuick');
+const target = document.getElementById('target');
+const orderBtn = document.getElementById('orderBtn');
+const toast = document.getElementById('toast');
+const bdLayanan = document.getElementById('bdLayanan');
+const bdRate = document.getElementById('bdRate');
+const bdJumlah = document.getElementById('bdJumlah');
+const bdTotal = document.getElementById('bdTotal');
+let currentService = null; // {label, rate, unit, platform}
+let reactionChoice = null; // {label, emoji}
+function fmtRp(n){
+return 'Rp ' + Math.round(n).toLocaleString('id-ID');
+}
+function setupSingleSelect(row, onChange){
+row.querySelectorAll('.chip').forEach(chip => {
+chip.addEventListener('click', () => {
+row.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+chip.classList.add('active');
+row.closest('.field').classList.remove('invalid');
+if(onChange) onChange(chip);
+});
+});
+}
+setupSingleSelect(platformRow, (chip) => {
+renderLayanan(chip.dataset.val);
+});
+function renderLayanan(platform){
+const list = SERVICES[platform] || [];
+layananRow.innerHTML = '';
+list.forEach(svc => {
+const btn = document.createElement('button');
+btn.className = 'chip pink';
+btn.textContent = svc.label;
+btn.dataset.rate = svc.rate;
+btn.dataset.unit = svc.unit;
+btn.dataset.label = svc.label;
+btn.dataset.min = svc.min;
+btn.dataset.presets = svc.presets.join(',');
+btn.dataset.note = svc.note || '';
+layananRow.appendChild(btn);
+});
+currentService = null;
+rateHint.textContent = '';
+jumlah.value = '';
+jumlah.min = 1;
+qtyQuick.innerHTML = '';
+updateBreakdown();
+layananRow.querySelectorAll('.chip').forEach(chip => {
+chip.addEventListener('click', () => {
+layananRow.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+chip.classList.add('active');
+layananRow.closest('.field').classList.remove('invalid');
+currentService = {
+label: chip.dataset.label,
+rate: Number(chip.dataset.rate),
+unit: chip.dataset.unit,
+min: Number(chip.dataset.min),
+presets: chip.dataset.presets.split(',').map(Number),
+note: chip.dataset.note,
+platform: platform
+};
+jumlah.min = currentService.min;
+rateHint.textContent = `Tarif: ${fmtRp(currentService.rate)} per ${currentService.unit} · minimal ${currentService.min.toLocaleString('id-ID')} ${currentService.unit}` + (currentService.note ? ` · ${currentService.note}` : '');
+renderQtyQuick(currentService);
+reactionChoice = null;
+if(currentService.unit === 'reaction'){
+reactionField.style.display = 'block';
+reactionRow.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+} else {
+reactionField.style.display = 'none';
+}
+updateBreakdown();
+});
+});
+}
+setupSingleSelect(reactionRow, (chip) => {
+reactionChoice = { label: chip.dataset.val, emoji: chip.dataset.emoji };
+});
+function renderQtyQuick(svc){
+qtyQuick.innerHTML = '';
+svc.presets.forEach(p => {
+const b = document.createElement('button');
+b.type = 'button';
+b.className = 'qty-btn';
+b.textContent = p.toLocaleString('id-ID');
+b.addEventListener('click', () => {
+jumlah.value = p;
+jumlah.closest('.field').classList.remove('invalid');
+updateBreakdown();
+});
+qtyQuick.appendChild(b);
+});
+}
+function getActiveVal(row){
+const el = row.querySelector('.chip.active');
+return el ? el.dataset.val : null;
+}
+function updateBreakdown(){
+if(!currentService || !jumlah.value || Number(jumlah.value) <= 0){
+bdLayanan.textContent = currentService ? `${currentService.label} (${currentService.platform})` : '-';
+bdRate.textContent = currentService ? `${fmtRp(currentService.rate)} / ${currentService.unit}` : '-';
+bdJumlah.textContent = '-';
+bdTotal.textContent = fmtRp(0);
+return;
+}
+const qty = Number(jumlah.value);
+const total = qty * currentService.rate;
+bdLayanan.textContent = `${currentService.label} (${currentService.platform})`;
+bdRate.textContent = `${fmtRp(currentService.rate)} / ${currentService.unit}`;
+bdJumlah.textContent = `${qty.toLocaleString('id-ID')} ${currentService.unit}`;
+bdTotal.textContent = fmtRp(total);
+}
+jumlah.addEventListener('input', updateBreakdown);
+function clearErrors(){
+document.querySelectorAll('.field').forEach(f => f.classList.remove('invalid'));
+document.querySelectorAll('.err').forEach(e => e.classList.remove('show'));
+}
+function validate(){
+clearErrors();
+let valid = true;
+const platform = getActiveVal(platformRow);
+if(!platform){
+platformRow.closest('.field').classList.add('invalid');
+document.getElementById('err-platform').classList.add('show');
+valid = false;
+}
+if(!currentService){
+layananRow.closest('.field').classList.add('invalid');
+document.getElementById('err-layanan').classList.add('show');
+valid = false;
+}
+if(!jumlah.value || Number(jumlah.value) <= 0){
+jumlah.closest('.field').classList.add('invalid');
+document.getElementById('err-jumlah').textContent = 'Jumlah wajib diisi (minimal 1).';
+document.getElementById('err-jumlah').classList.add('show');
+valid = false;
+} else if(currentService && Number(jumlah.value) < currentService.min){
+jumlah.closest('.field').classList.add('invalid');
+document.getElementById('err-jumlah').textContent = `Jumlah minimal ${currentService.min.toLocaleString('id-ID')} ${currentService.unit}.`;
+document.getElementById('err-jumlah').classList.add('show');
+valid = false;
+}
+if(currentService && currentService.unit === 'reaction' && !reactionChoice){
+reactionField.classList.add('invalid');
+document.getElementById('err-reaction').classList.add('show');
+valid = false;
+}
+if(!target.value.trim()){
+target.closest('.field').classList.add('invalid');
+document.getElementById('err-target').classList.add('show');
+valid = false;
+}
+return valid;
+}
+function buildText(){
+const platform = getActiveVal(platformRow);
+const qty = Number(jumlah.value);
+const total = qty * currentService.rate;
+const targetVal = target.value.trim();
+const layananLabel = currentService.unit === 'reaction' && reactionChoice
+? `Reaction (${reactionChoice.label})`
+: currentService.label;
+return `*꒰꒰͡🔮 ִ ׄ SUNTIK SOSIAL MEDIA*\n\n˙ . platform/aplikasi : ${platform}\n˙ . layanan suntik : ${layananLabel}\n˙ . jumlah : ${qty.toLocaleString('id-ID')} ${currentService.unit}\n˙ . target : ${targetVal}\n˙ . total harga : ${fmtRp(total)}`;
+}
+const WA_NUMBER = ov('wa_number', '6285142017734');
+const WA_CHANNEL = ov('wa_channel', 'https://wa.me/channel/xxxxxxxx');
+const WA_GROUP = ov('wa_group', 'https://chat.whatsapp.com/xxxxxxxx');
+orderBtn.addEventListener('click', () => {
+if(!validate()) return;
+const text = buildText();
+const url = `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(text)}`;
+toast.classList.add('show');
+setTimeout(() => toast.classList.remove('show'), 2200);
+window.open(url, '_blank');
+});
+function renderRateGrid(){
+const grid = document.getElementById('rateGrid');
+if(!grid) return;
+const ig = SERVICES['Instagram (IG)'];
+const tt = SERVICES['TikTok (TT)'];
+const wa = SERVICES['WhatsApp (WA)'];
+const find = (list, label) => list.find(s => s.label === label);
+const igLike = find(ig,'Like'), ttLike = find(tt,'Like');
+const igViews = find(ig,'Views'), ttViews = find(tt,'Views');
+const igFol = find(ig,'Followers'), ttFol = find(tt,'Followers');
+const waPeng = find(wa,'Pengikut');
+const waReact = find(wa,'Reaction');
+const waVote = find(wa,'Polling Vote');
+grid.innerHTML = `
+<div class="rate-card"><b>${fmtRp(igLike.rate)}</b><span>per Like — IG min ${igLike.min}, TT min ${ttLike.min}</span></div>
+<div class="rate-card"><b>${fmtRp(igViews.rate)}</b><span>per View — IG min ${igViews.min}, TT min ${ttViews.min}</span></div>
+<div class="rate-card"><b>${fmtRp(waPeng.rate)}</b><span>per Pengikut (WA, min ${waPeng.min})</span></div>
+<div class="rate-card"><b>${fmtRp(igFol.rate)}</b><span>per Followers — IG min ${igFol.min}, TT min ${ttFol.min}</span></div>
+<div class="rate-card"><b>${fmtRp(waReact.rate)}</b><span>per Reaction (WA, min ${waReact.min}, pilih mix atau 1 emoji)</span></div>
+<div class="rate-card"><b>${fmtRp(waVote.rate)}</b><span>per Vote Polling (WA, min ${waVote.min})</span></div>
+`;
+}
+renderRateGrid();
+const marqueeBar = document.getElementById('marqueeBar');
+const marqueeTrack = document.getElementById('marqueeTrack');
+const helpOverlay = document.getElementById('helpOverlay');
+const helpClose = document.getElementById('helpClose');
+const helpChat = document.getElementById('helpChat');
+const helpChannel = document.getElementById('helpChannel');
+const helpGroup = document.getElementById('helpGroup');
+const marqueeMsg = '📣 Perlu bantuan? Ketuk di sini untuk chat admin, gabung saluran & group Kayz';
+marqueeTrack.innerHTML = `<span>${marqueeMsg}</span><span>${marqueeMsg}</span>`;
+helpChat.href = `https://wa.me/${WA_NUMBER}`;
+helpChannel.href = WA_CHANNEL;
+helpGroup.href = WA_GROUP;
+function openHelp(){ helpOverlay.classList.add('show'); }
+function closeHelp(){ helpOverlay.classList.remove('show'); }
+marqueeBar.addEventListener('click', openHelp);
+helpClose.addEventListener('click', closeHelp);
+helpOverlay.addEventListener('click', (e) => {
+if(e.target === helpOverlay) closeHelp();
+});
+const tutSteps = [
+{
+icon:'👋', title:'Selamat datang di Kayz!',
+body:'Bingung mulai dari mana? Ikuti 4 langkah cepat ini biar order kamu langsung diproses tanpa ribet.',
+target:null
+},
+{
+icon:'1️⃣', title:'Pilih Platform & Layanan',
+body:'Klik salah satu platform (<b>IG / TT / WA</b>) dulu, abis itu pilih layanan yang mau kamu beli — Like, Views, Followers, Pengikut, Reaction, atau Polling Vote.',
+target:'platformRow'
+},
+{
+icon:'2️⃣', title:'Isi Jumlah & Target',
+body:'Masukin jumlah sesuai kebutuhan (perhatikan <b>minimal</b> tiap layanan ya), terus isi link atau username target kamu di kolom Target.',
+target:'jumlah'
+},
+{
+icon:'3️⃣', title:'Cek Total & Kirim',
+body:'Total harga otomatis muncul di bagian rincian bawah. Kalau sudah pas, klik tombol kirim — nanti WhatsApp kebuka otomatis dengan pesanan lengkap kamu.',
+target:'orderBtn'
+}
+];
+let tutIndex = 0;
+const tutOverlay = document.getElementById('tutOverlay');
+const tutIcon = document.getElementById('tutIcon');
+const tutTitle = document.getElementById('tutTitle');
+const tutBody = document.getElementById('tutBody');
+const tutStepLabel = document.getElementById('tutStepLabel');
+const tutDots = document.getElementById('tutDots');
+const tutBack = document.getElementById('tutBack');
+const tutNext = document.getElementById('tutNext');
+const tutSkip = document.getElementById('tutSkip');
+const helpFab = document.getElementById('helpFab');
+function renderTutStep(){
+const step = tutSteps[tutIndex];
+tutIcon.textContent = step.icon;
+tutTitle.textContent = step.title;
+tutBody.innerHTML = step.body;
+tutStepLabel.textContent = `Langkah ${tutIndex + 1}/${tutSteps.length}`;
+tutDots.innerHTML = '';
+tutSteps.forEach((_, i) => {
+const d = document.createElement('span');
+d.className = 'tut-dot' + (i === tutIndex ? ' active' : '');
+tutDots.appendChild(d);
+});
+tutBack.classList.toggle('hidden', tutIndex === 0);
+tutNext.textContent = tutIndex === tutSteps.length - 1 ? 'Mulai Order' : 'Lanjut';
+if(step.target){
+const el = document.getElementById(step.target);
+if(el){
+setTimeout(() => {
+el.scrollIntoView({behavior:'smooth', block:'center'});
+const spotTarget = el.closest('.field') || el;
+spotTarget.classList.add('spot-pulse');
+setTimeout(() => spotTarget.classList.remove('spot-pulse'), 3000);
+}, 350);
+}
+}
+}
+function openTutorial(){
+tutIndex = 0;
+renderTutStep();
+tutOverlay.classList.add('show');
+}
+function closeTutorial(){
+tutOverlay.classList.remove('show');
+try { localStorage.setItem('kayz_suntik_tutorial_seen', '1'); } catch(e) {}
+}
+tutNext.addEventListener('click', () => {
+if(tutIndex < tutSteps.length - 1){
+tutIndex++;
+renderTutStep();
+} else {
+closeTutorial();
+}
+});
+tutBack.addEventListener('click', () => {
+if(tutIndex > 0){
+tutIndex--;
+renderTutStep();
+}
+});
+tutSkip.addEventListener('click', closeTutorial);
+helpFab.addEventListener('click', openTutorial);
+try {
+if(!localStorage.getItem('kayz_suntik_tutorial_seen')){
+setTimeout(openTutorial, 700);
+}
+} catch(e) { /* localStorage blocked, skip auto-tutorial */ }
