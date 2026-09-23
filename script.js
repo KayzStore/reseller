@@ -381,22 +381,43 @@ function openTutorial(){
 tutIndex = 0;
 renderTutStep();
 tutOverlay.classList.add('show');
+lockPageScroll();
 }
 function closeTutorial(){
 tutOverlay.classList.remove('show');
 document.getElementById('tutHighlight').classList.remove('show');
 if(spotlightRAF){ cancelAnimationFrame(spotlightRAF); spotlightRAF = null; }
 try { localStorage.setItem('kayz_suntik_tutorial_seen', '1'); } catch(e) {}
-// When the tutorial ends, bring the user back up to the top of the form
-// (Platform/Aplikasi) so they start filling it out from step 1, with no
-// leftover highlight box.
-const first = document.getElementById('platformRow');
-const firstField = first ? (first.closest('.field') || first) : null;
-if(firstField){
-firstField.scrollIntoView({behavior:'smooth', block:'start'});
+unlockPageScroll();
+// When the tutorial ends, bring the user back up to the very top of the
+// form (card title + "1 Platform/Aplikasi"), clear of the fixed marquee
+// bar, so they start filling it out from step 1 with no highlight left.
+const formCard = document.querySelector('.card');
+const marquee = document.querySelector('.marquee-bar');
+const marqueeHeight = marquee ? marquee.getBoundingClientRect().height : 0;
+if(formCard){
+const top = formCard.getBoundingClientRect().top + window.scrollY - marqueeHeight - 10;
+window.scrollTo({top: Math.max(top, 0), behavior:'smooth'});
 } else {
 window.scrollTo({top: 0, behavior:'smooth'});
 }
+}
+// While the tutorial is open, the page can only be navigated with the
+// Kembali/Lanjut/Lewati buttons — manual swipe/scroll/wheel on the
+// background is blocked. Scrolling inside the tutorial card itself (if its
+// text is long) and Claude's own programmatic scrollTo calls still work,
+// since those aren't touch/wheel events.
+function blockBackgroundScroll(e){
+if(e.target.closest && e.target.closest('.tut-modal')) return;
+e.preventDefault();
+}
+function lockPageScroll(){
+document.addEventListener('touchmove', blockBackgroundScroll, {passive:false});
+document.addEventListener('wheel', blockBackgroundScroll, {passive:false});
+}
+function unlockPageScroll(){
+document.removeEventListener('touchmove', blockBackgroundScroll, {passive:false});
+document.removeEventListener('wheel', blockBackgroundScroll, {passive:false});
 }
 tutNext.addEventListener('click', () => {
 tutNext.disabled = true;
