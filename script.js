@@ -408,7 +408,15 @@ window.scrollTo({top: 0, behavior:'smooth'});
 // text is long) and Claude's own programmatic scrollTo calls still work,
 // since those aren't touch/wheel events.
 function blockBackgroundScroll(e){
-if(e.target.closest && e.target.closest('.tut-modal')) return;
+const modal = e.target.closest ? e.target.closest('.tut-modal') : null;
+// Only let a swipe move the tutorial card's own content if that content
+// genuinely overflows and needs scrolling. Otherwise (the normal case,
+// since the card text is short) block it too, so a drag anywhere over the
+// tutorial — modal included — can never leak through and move the page
+// behind it.
+if(modal && modal.scrollHeight > modal.clientHeight + 1){
+return;
+}
 e.preventDefault();
 }
 function lockPageScroll(){
