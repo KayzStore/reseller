@@ -277,6 +277,7 @@ target:['breakdownBox','orderBtn']
 }
 ];
 let tutIndex = 0;
+let spotlightRAF = null;
 const tutOverlay = document.getElementById('tutOverlay');
 const tutIcon = document.getElementById('tutIcon');
 const tutTitle = document.getElementById('tutTitle');
@@ -307,6 +308,7 @@ moveSpotlight(step.target);
 function moveSpotlight(target){
 const box = document.getElementById('tutHighlight');
 box.classList.remove('show');
+if(spotlightRAF){ cancelAnimationFrame(spotlightRAF); spotlightRAF = null; }
 if(!target){
 const cx = window.innerWidth / 2;
 const cy = window.innerHeight / 2;
@@ -346,12 +348,16 @@ targetScroll = docTop - safeTop - (availableHeight - elHeight) / 2;
 targetScroll = docTop - safeTop;
 }
 window.scrollTo({top: Math.max(targetScroll, 0), behavior:'smooth'});
-// A fixed delay here used to guess when the smooth-scroll finished, but on
-// a long first scroll (e.g. page just loaded, jumping straight to step 2)
-// the scroll was still moving when the timer fired, so the highlight box
-// got measured at the wrong spot. Wait for scrollY to actually settle
-// instead, with a max wait so we never hang if scrolling doesn't happen.
-waitForScrollSettle().then(() => {
+// Different browsers finish (or fake) smooth scrolling at very different
+// speeds, so guessing a fixed delay before measuring the element's
+// position is unreliable — on some phones it fires too early and the
+// highlight box lands in the wrong spot. Instead, keep re-measuring the
+// element every frame for a little while so the box continuously tracks
+// wherever it actually is and always ends up correct, no matter how the
+// browser scrolls.
+if(spotlightRAF) cancelAnimationFrame(spotlightRAF);
+const trackUntil = performance.now() + 1500;
+function trackBox(){
 const rects = els.map(el => el.getBoundingClientRect());
 const top = Math.min(...rects.map(r => r.top));
 const left = Math.min(...rects.map(r => r.left));
@@ -363,30 +369,13 @@ box.style.left = (left - pad) + 'px';
 box.style.width = (right - left + pad * 2) + 'px';
 box.style.height = (bottom - top + pad * 2) + 'px';
 box.classList.add('show');
-});
-}
-function waitForScrollSettle(maxWait = 900){
-return new Promise(resolve => {
-let lastY = window.scrollY;
-let stableFrames = 0;
-const start = performance.now();
-function check(){
-const y = window.scrollY;
-if(y === lastY){
-stableFrames++;
+if(performance.now() < trackUntil){
+spotlightRAF = requestAnimationFrame(trackBox);
 } else {
-stableFrames = 0;
-lastY = y;
-}
-const timedOut = performance.now() - start > maxWait;
-if(stableFrames >= 3 || timedOut){
-resolve();
-} else {
-requestAnimationFrame(check);
+spotlightRAF = null;
 }
 }
-requestAnimationFrame(check);
-});
+trackBox();
 }
 function openTutorial(){
 tutIndex = 0;
@@ -396,6 +385,7 @@ tutOverlay.classList.add('show');
 function closeTutorial(){
 tutOverlay.classList.remove('show');
 document.getElementById('tutHighlight').classList.remove('show');
+if(spotlightRAF){ cancelAnimationFrame(spotlightRAF); spotlightRAF = null; }
 try { localStorage.setItem('kayz_suntik_tutorial_seen', '1'); } catch(e) {}
 }
 tutNext.addEventListener('click', () => {
