@@ -322,7 +322,25 @@ const els = ids.map(id => document.getElementById(id)).filter(Boolean);
 if(els.length === 0){
 return;
 }
-els[0].scrollIntoView({behavior:'smooth', block:'center'});
+// The tutorial modal is pinned to the bottom of the screen, so scrolling
+// must leave room for it instead of centering blindly (which can hide
+// the highlighted element, e.g. the WhatsApp order button, behind it).
+const modal = document.querySelector('.tut-modal');
+const modalHeight = modal ? modal.getBoundingClientRect().height : 0;
+const safeTop = 20;
+const safeBottom = modalHeight + 20;
+const rects0 = els.map(el => el.getBoundingClientRect());
+const docTop = Math.min(...rects0.map(r => r.top)) + window.scrollY;
+const docBottom = Math.max(...rects0.map(r => r.bottom)) + window.scrollY;
+const elHeight = docBottom - docTop;
+const availableHeight = Math.max(window.innerHeight - safeTop - safeBottom, 50);
+let targetScroll;
+if(elHeight <= availableHeight){
+targetScroll = docTop - safeTop - (availableHeight - elHeight) / 2;
+} else {
+targetScroll = docTop - safeTop;
+}
+window.scrollTo({top: Math.max(targetScroll, 0), behavior:'smooth'});
 setTimeout(() => {
 const rects = els.map(el => el.getBoundingClientRect());
 const top = Math.min(...rects.map(r => r.top));
