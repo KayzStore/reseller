@@ -318,7 +318,12 @@ requestAnimationFrame(() => box.classList.add('show'));
 return;
 }
 const ids = Array.isArray(target) ? target : [target];
-const els = ids.map(id => document.getElementById(id)).filter(Boolean);
+// Highlight the whole labeled field (number + title + input), not just the
+// bare input/chip-row, so steps like "2 Layanan Suntik" zoom in on the
+// heading too instead of only the small hint text inside it.
+const els = ids.map(id => document.getElementById(id))
+.filter(Boolean)
+.map(el => el.closest('.field') || el);
 if(els.length === 0){
 return;
 }
