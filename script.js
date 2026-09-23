@@ -247,22 +247,32 @@ if(e.target === helpOverlay) closeHelp();
 const tutSteps = [
 {
 icon:'👋', title:'Selamat datang di Kayz!',
-body:'Bingung mulai dari mana? Ikuti 4 langkah cepat ini biar order kamu langsung diproses tanpa ribet.',
+body:'Bingung mulai dari mana? Ikuti langkah-langkah cepat ini biar order kamu langsung diproses tanpa ribet.',
 target:null
 },
 {
-icon:'1️⃣', title:'Pilih Platform & Layanan',
-body:'Klik salah satu platform (<b>IG / TT / WA</b>) dulu, abis itu pilih layanan yang mau kamu beli — Like, Views, Followers, Pengikut, Reaction, atau Polling Vote.',
+icon:'1️⃣', title:'Pilih Platform',
+body:'Klik salah satu platform dulu: <b>IG</b> (Instagram), <b>TT</b> (TikTok), atau <b>WA</b> (WhatsApp).',
 target:'platformRow'
 },
 {
-icon:'2️⃣', title:'Isi Jumlah & Target',
-body:'Masukin jumlah sesuai kebutuhan (perhatikan <b>minimal</b> tiap layanan ya), terus isi link atau username target kamu di kolom Target.',
+icon:'2️⃣', title:'Pilih Layanan Suntik',
+body:'Setelah platform dipilih, opsi layanan bakal muncul di sini — pilih salah satu: Like, Views, Followers, Pengikut, Reaction, atau Polling Vote.',
+target:'layananRow'
+},
+{
+icon:'3️⃣', title:'Isi Jumlah',
+body:'Masukin jumlah sesuai kebutuhan kamu di sini. Perhatikan <b>minimal</b> tiap layanan ya, ada catatan tarifnya di bawah kolom ini.',
 target:'jumlah'
 },
 {
-icon:'3️⃣', title:'Cek Total & Kirim',
-body:'Total harga otomatis muncul di bagian rincian bawah. Kalau sudah pas, klik tombol kirim — nanti WhatsApp kebuka otomatis dengan pesanan lengkap kamu.',
+icon:'4️⃣', title:'Isi Target',
+body:'Masukin link postingan atau username target di sini — pastikan linknya benar dan bisa diakses publik.',
+target:'target'
+},
+{
+icon:'5️⃣', title:'Cek Total & Kirim Pesanan',
+body:'Total harga otomatis muncul di bagian rincian. Kalau sudah pas, klik tombol ini — WhatsApp bakal kebuka otomatis dengan pesanan lengkap kamu.',
 target:'orderBtn'
 }
 ];
@@ -291,17 +301,38 @@ tutDots.appendChild(d);
 });
 tutBack.classList.toggle('hidden', tutIndex === 0);
 tutNext.textContent = tutIndex === tutSteps.length - 1 ? 'Mulai Order' : 'Lanjut';
-if(step.target){
-const el = document.getElementById(step.target);
-if(el){
+moveSpotlight(step.target);
+}
+
+function moveSpotlight(targetId){
+const box = document.getElementById('tutHighlight');
+if(!targetId){
+const cx = window.innerWidth / 2;
+const cy = window.innerHeight / 2;
+box.style.top = cy + 'px';
+box.style.left = cx + 'px';
+box.style.width = '0px';
+box.style.height = '0px';
+box.classList.add('show');
+return;
+}
+const el = document.getElementById(targetId);
+if(!el){
+box.classList.remove('show');
+return;
+}
 setTimeout(() => {
 el.scrollIntoView({behavior:'smooth', block:'center'});
-const spotTarget = el.closest('.field') || el;
-spotTarget.classList.add('spot-pulse');
-setTimeout(() => spotTarget.classList.remove('spot-pulse'), 3000);
-}, 350);
-}
-}
+setTimeout(() => {
+const rect = el.getBoundingClientRect();
+const pad = 10;
+box.style.top = (rect.top - pad) + 'px';
+box.style.left = (rect.left - pad) + 'px';
+box.style.width = (rect.width + pad * 2) + 'px';
+box.style.height = (rect.height + pad * 2) + 'px';
+box.classList.add('show');
+}, 300);
+}, 50);
 }
 function openTutorial(){
 tutIndex = 0;
@@ -310,6 +341,7 @@ tutOverlay.classList.add('show');
 }
 function closeTutorial(){
 tutOverlay.classList.remove('show');
+document.getElementById('tutHighlight').classList.remove('show');
 try { localStorage.setItem('kayz_suntik_tutorial_seen', '1'); } catch(e) {}
 }
 tutNext.addEventListener('click', () => {
