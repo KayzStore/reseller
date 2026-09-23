@@ -272,8 +272,8 @@ target:'target'
 },
 {
 icon:'5️⃣', title:'Cek Total & Kirim Pesanan',
-body:'Total harga otomatis muncul di bagian rincian. Kalau sudah pas, klik tombol ini — WhatsApp bakal kebuka otomatis dengan pesanan lengkap kamu.',
-target:'orderBtn'
+body:'Total harga otomatis muncul di bagian rincian ini. Kalau sudah pas, klik tombol ini — WhatsApp bakal kebuka otomatis dengan pesanan lengkap kamu.',
+target:['breakdownBox','orderBtn']
 }
 ];
 let tutIndex = 0;
@@ -304,9 +304,9 @@ tutNext.textContent = tutIndex === tutSteps.length - 1 ? 'Mulai Order' : 'Lanjut
 moveSpotlight(step.target);
 }
 
-function moveSpotlight(targetId){
+function moveSpotlight(target){
 const box = document.getElementById('tutHighlight');
-if(!targetId){
+if(!target){
 const cx = window.innerWidth / 2;
 const cy = window.innerHeight / 2;
 box.style.top = cy + 'px';
@@ -316,20 +316,25 @@ box.style.height = '0px';
 box.classList.add('show');
 return;
 }
-const el = document.getElementById(targetId);
-if(!el){
+const ids = Array.isArray(target) ? target : [target];
+const els = ids.map(id => document.getElementById(id)).filter(Boolean);
+if(els.length === 0){
 box.classList.remove('show');
 return;
 }
 setTimeout(() => {
-el.scrollIntoView({behavior:'smooth', block:'center'});
+els[0].scrollIntoView({behavior:'smooth', block:'center'});
 setTimeout(() => {
-const rect = el.getBoundingClientRect();
+const rects = els.map(el => el.getBoundingClientRect());
+const top = Math.min(...rects.map(r => r.top));
+const left = Math.min(...rects.map(r => r.left));
+const right = Math.max(...rects.map(r => r.right));
+const bottom = Math.max(...rects.map(r => r.bottom));
 const pad = 10;
-box.style.top = (rect.top - pad) + 'px';
-box.style.left = (rect.left - pad) + 'px';
-box.style.width = (rect.width + pad * 2) + 'px';
-box.style.height = (rect.height + pad * 2) + 'px';
+box.style.top = (top - pad) + 'px';
+box.style.left = (left - pad) + 'px';
+box.style.width = (right - left + pad * 2) + 'px';
+box.style.height = (bottom - top + pad * 2) + 'px';
 box.classList.add('show');
 }, 300);
 }, 50);
