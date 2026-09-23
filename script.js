@@ -383,22 +383,20 @@ renderTutStep();
 tutOverlay.classList.add('show');
 }
 function closeTutorial(){
-// On some mobile browsers, hiding the big fixed tutorial overlay makes the
-// page jump the scroll position back up (e.g. all the way to "Platform /
-// Aplikasi" at the top) instead of staying where the user actually was.
-// Remember that spot and forcibly hold it for a few frames after closing.
-const keepY = window.scrollY;
 tutOverlay.classList.remove('show');
 document.getElementById('tutHighlight').classList.remove('show');
 if(spotlightRAF){ cancelAnimationFrame(spotlightRAF); spotlightRAF = null; }
 try { localStorage.setItem('kayz_suntik_tutorial_seen', '1'); } catch(e) {}
-let frames = 0;
-function holdScroll(){
-if(window.scrollY !== keepY) window.scrollTo(0, keepY);
-frames++;
-if(frames < 12) requestAnimationFrame(holdScroll);
+// When the tutorial ends, bring the user back up to the top of the form
+// (Platform/Aplikasi) so they start filling it out from step 1, with no
+// leftover highlight box.
+const first = document.getElementById('platformRow');
+const firstField = first ? (first.closest('.field') || first) : null;
+if(firstField){
+firstField.scrollIntoView({behavior:'smooth', block:'start'});
+} else {
+window.scrollTo({top: 0, behavior:'smooth'});
 }
-requestAnimationFrame(holdScroll);
 }
 tutNext.addEventListener('click', () => {
 tutNext.disabled = true;
