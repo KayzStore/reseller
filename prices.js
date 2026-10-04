@@ -22,18 +22,18 @@ const KAYZ_PRICES = {
   ig_views_rate: 2,        // harga per 1 views (Rp)
   ig_views_min: 100,       // minimal beli views
 
-  ig_followers_rate: 38,   // harga per 1 followers (Rp)
+  ig_followers_rate: 64,   // harga per 1 followers (Rp)
   ig_followers_min: 20,    // minimal beli followers
 
 
   // ---------------- TIKTOK (TT) ----------------
-  tt_like_rate: 22,
+  tt_like_rate: 28,
   tt_like_min: 10,
 
   tt_views_rate: 2,
   tt_views_min: 100,
 
-  tt_followers_rate: 37,
+  tt_followers_rate: 62,
   tt_followers_min: 10,
 
 
