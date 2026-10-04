@@ -16,7 +16,7 @@
 const KAYZ_PRICES = {
 
   // ---------------- INSTAGRAM (IG) ----------------
-  ig_like_rate: 3,        // harga per 1 like (Rp)
+  ig_like_rate: 8,        // harga per 1 like (Rp)
   ig_like_min: 10,         // minimal beli like
 
   ig_views_rate: 2,        // harga per 1 views (Rp)
