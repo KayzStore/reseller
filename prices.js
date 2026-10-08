@@ -1,18 +1,3 @@
-/*
-  ===========================================================
-   KAYZ.ID - FILE HARGA SUNTIK SOSMED
-  ===========================================================
-  Ini file KHUSUS buat ubah harga & kontak. Tinggal edit angka
-  atau link di bawah, simpan, terus upload ulang file ini ke
-  hosting kamu (Vercel/dsb). SEMUA pengunjung website langsung
-  lihat harga baru begitu file ini di-update - beda sama cara
-  lama (localStorage) yang cuma kesimpen di 1 HP doang.
-
-  JANGAN hapus tanda kurung {, }, koma (,), atau titik dua (:).
-  Yang boleh diubah cuma ANGKA dan LINK di sebelah kanan titik dua.
-  ===========================================================
-*/
-
 const KAYZ_PRICES = {
 
   // ---------------- INSTAGRAM (IG) ----------------
@@ -28,7 +13,7 @@ const KAYZ_PRICES = {
 
   // ---------------- TIKTOK (TT) ----------------
   tt_like_rate: 28,
-  tt_like_min: 10,
+  tt_like_min: 50,
 
   tt_views_rate: 2,
   tt_views_min: 100,
