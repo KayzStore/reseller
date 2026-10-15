@@ -783,3 +783,21 @@ body {
   color:var(--muted);
 }
 
+
+/* Note permanen / tidak permanen di rincian total */
+.bd-note {
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  margin:8px 0 2px;
+  padding:8px 10px;
+  border-radius:8px;
+  font-size:13px;
+  border:1px solid var(--line);
+}
+.bd-note .bd-note-label { color:var(--muted); }
+.bd-note .bd-note-text { font-weight:600; text-align:right; }
+.bd-note.perm { border-color:rgba(94,230,168,0.4); }
+.bd-note.perm .bd-note-text { color:var(--good); }
+.bd-note.nonperm { border-color:rgba(255,180,84,0.4); }
+.bd-note.nonperm .bd-note-text { color:var(--amber); }

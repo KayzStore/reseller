@@ -6,21 +6,26 @@ function ov(key, fallback){
 
 const SERVICES = {
 'Instagram (IG)': [
-{label:'Like', rate:Number(ov('ig_like_rate',10)), unit:'like', min:Number(ov('ig_like_min',10)), presets:[10,100,250,500]},
-{label:'Views', rate:Number(ov('ig_views_rate',1)), unit:'views', min:Number(ov('ig_views_min',100)), presets:[100,1000,5000,10000]},
-{label:'Followers', rate:Number(ov('ig_followers_rate',50)), unit:'followers', min:Number(ov('ig_followers_min',20)), presets:[20,100,250,500]}
+{label:'Like', rate:Number(ov('ig_like_rate',10)), unit:'like', min:Number(ov('ig_like_min',10)), permanent:ov('ig_like_permanent',true), presets:[10,100,250,500]},
+{label:'Views', rate:Number(ov('ig_views_rate',1)), unit:'views', min:Number(ov('ig_views_min',100)), permanent:ov('ig_views_permanent',true), presets:[100,1000,5000,10000]},
+{label:'Followers', rate:Number(ov('ig_followers_rate',50)), unit:'followers', min:Number(ov('ig_followers_min',20)), permanent:ov('ig_followers_permanent',false), presets:[20,100,250,500]}
 ],
 'TikTok (TT)': [
-{label:'Like', rate:Number(ov('tt_like_rate',10)), unit:'like', min:Number(ov('tt_like_min',10)), presets:[10,100,250,500]},
-{label:'Views', rate:Number(ov('tt_views_rate',1)), unit:'views', min:Number(ov('tt_views_min',100)), presets:[100,500,1000,5000]},
-{label:'Followers', rate:Number(ov('tt_followers_rate',50)), unit:'followers', min:Number(ov('tt_followers_min',10)), presets:[10,50,100,500]}
+{label:'Like', rate:Number(ov('tt_like_rate',10)), unit:'like', min:Number(ov('tt_like_min',10)), permanent:ov('tt_like_permanent',true), presets:[10,100,250,500]},
+{label:'Views', rate:Number(ov('tt_views_rate',1)), unit:'views', min:Number(ov('tt_views_min',100)), permanent:ov('tt_views_permanent',true), presets:[100,500,1000,5000]},
+{label:'Followers', rate:Number(ov('tt_followers_rate',50)), unit:'followers', min:Number(ov('tt_followers_min',10)), permanent:ov('tt_followers_permanent',false), presets:[10,50,100,500]}
 ],
 'WhatsApp (WA)': [
-{label:'Pengikut', rate:Number(ov('wa_pengikut_rate',10)), unit:'pengikut', min:Number(ov('wa_pengikut_min',10)), presets:[10,100,250,500]},
-{label:'Reaction', rate:Number(ov('wa_reaction_rate',1)), unit:'reaction', min:Number(ov('wa_reaction_min',10)), presets:[10,100,1000,5000], note:'Pilih mix acak atau 1 emoji'},
-{label:'Polling Vote', rate:Number(ov('wa_vote_rate',40)), unit:'vote', min:Number(ov('wa_vote_min',10)), presets:[10,25,50,100]}
+{label:'Pengikut', rate:Number(ov('wa_pengikut_rate',10)), unit:'pengikut', min:Number(ov('wa_pengikut_min',10)), permanent:ov('wa_pengikut_permanent',false), presets:[10,100,250,500]},
+{label:'Reaction', rate:Number(ov('wa_reaction_rate',1)), unit:'reaction', min:Number(ov('wa_reaction_min',10)), permanent:ov('wa_reaction_permanent',true), presets:[10,100,1000,5000], note:'Pilih mix acak atau 1 emoji'},
+{label:'Polling Vote', rate:Number(ov('wa_vote_rate',40)), unit:'vote', min:Number(ov('wa_vote_min',10)), permanent:ov('wa_vote_permanent',true), presets:[10,25,50,100]}
 ]
 };
+function permText(isPerm){
+return isPerm
+? ov('note_permanent','Permanen (tidak akan turun)')
+: ov('note_nonpermanent','Tidak permanen (bisa turun sewaktu-waktu)');
+}
 const platformRow = document.getElementById('platformRow');
 const layananRow = document.getElementById('layananRow');
 const reactionField = document.getElementById('reactionField');
@@ -35,6 +40,8 @@ const bdLayanan = document.getElementById('bdLayanan');
 const bdRate = document.getElementById('bdRate');
 const bdJumlah = document.getElementById('bdJumlah');
 const bdTotal = document.getElementById('bdTotal');
+const bdNote = document.getElementById('bdNote');
+const bdNoteText = document.getElementById('bdNoteText');
 let currentService = null; // {label, rate, unit, platform}
 let reactionChoice = null; // {label, emoji}
 function fmtRp(n){
@@ -66,6 +73,7 @@ btn.dataset.label = svc.label;
 btn.dataset.min = svc.min;
 btn.dataset.presets = svc.presets.join(',');
 btn.dataset.note = svc.note || '';
+btn.dataset.permanent = svc.permanent ? '1' : '0';
 layananRow.appendChild(btn);
 });
 currentService = null;
@@ -86,6 +94,7 @@ unit: chip.dataset.unit,
 min: Number(chip.dataset.min),
 presets: chip.dataset.presets.split(',').map(Number),
 note: chip.dataset.note,
+permanent: chip.dataset.permanent === '1',
 platform: platform
 };
 jumlah.min = currentService.min;
@@ -124,7 +133,15 @@ function getActiveVal(row){
 const el = row.querySelector('.chip.active');
 return el ? el.dataset.val : null;
 }
+function updateNote(){
+if(!currentService){ bdNote.style.display = 'none'; return; }
+bdNote.style.display = 'flex';
+bdNote.classList.toggle('perm', currentService.permanent);
+bdNote.classList.toggle('nonperm', !currentService.permanent);
+bdNoteText.textContent = permText(currentService.permanent);
+}
 function updateBreakdown(){
+updateNote();
 if(!currentService || !jumlah.value || Number(jumlah.value) <= 0){
 bdLayanan.textContent = currentService ? `${currentService.label} (${currentService.platform})` : '-';
 bdRate.textContent = currentService ? `${fmtRp(currentService.rate)} / ${currentService.unit}` : '-';
@@ -189,7 +206,7 @@ const targetVal = target.value.trim();
 const layananLabel = currentService.unit === 'reaction' && reactionChoice
 ? `Reaction (${reactionChoice.label})`
 : currentService.label;
-return `*꒰꒰͡🔮 ִ ׄ SUNTIK SOSIAL MEDIA*\n\n˙ . platform/aplikasi : ${platform}\n˙ . layanan suntik : ${layananLabel}\n˙ . jumlah : ${qty.toLocaleString('id-ID')} ${currentService.unit}\n˙ . target : ${targetVal}\n˙ . total harga : ${fmtRp(total)}`;
+return `*꒰꒰͡🔮 ִ ׄ SUNTIK SOSIAL MEDIA*\n\n˙ . platform/aplikasi : ${platform}\n˙ . layanan suntik : ${layananLabel}\n˙ . jumlah : ${qty.toLocaleString('id-ID')} ${currentService.unit}\n˙ . target : ${targetVal}\n˙ . total harga : ${fmtRp(total)}\n˙ . note : ${permText(currentService.permanent)}`;
 }
 const WA_NUMBER = ov('wa_number', '6285142017734');
 const WA_CHANNEL = ov('wa_channel', 'https://wa.me/channel/xxxxxxxx');
