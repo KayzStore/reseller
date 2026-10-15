@@ -31,7 +31,7 @@ const KAYZ_PRICES = {
   // ---------------- WHATSAPP (WA) ----------------
   wa_pengikut_rate: 10,
   wa_pengikut_min: 10,
-  wa_pengikut_permanent: false,
+  wa_pengikut_permanent: true,
 
   wa_reaction_rate: 2,
   wa_reaction_min: 10,
