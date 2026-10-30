@@ -10,7 +10,7 @@ const KAYZ_PRICES = {
   ig_views_permanent: true,   // true = permanen, false = tidak permanen
 
   ig_followers_rate: 64,   // harga per 1 followers (Rp)
-  ig_followers_min: 20,    // minimal beli followers
+  ig_followers_min: 50,    // minimal beli followers
   ig_followers_permanent: false,   // true = permanen, false = tidak permanen
 
 
