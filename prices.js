@@ -1,7 +1,7 @@
 const KAYZ_PRICES = {
 
   // ---------------- INSTAGRAM (IG) ----------------
-  ig_like_rate: 8,        // harga per 1 like (Rp)
+  ig_like_rate: 15,        // harga per 1 like (Rp)
   ig_like_min: 10,         // minimal beli like
   ig_like_permanent: true,   // true = permanen, false = tidak permanen
 
@@ -23,13 +23,13 @@ const KAYZ_PRICES = {
   tt_views_min: 100,
   tt_views_permanent: true,
 
-  tt_followers_rate: 62,
+  tt_followers_rate: 64,
   tt_followers_min: 100,
   tt_followers_permanent: false,
 
 
   // ---------------- WHATSAPP (WA) ----------------
-  wa_pengikut_rate: 10,
+  wa_pengikut_rate: 20,
   wa_pengikut_min: 10,
   wa_pengikut_permanent: true,
 
