@@ -15,7 +15,7 @@ const KAYZ_PRICES = {
 
 
   // ---------------- TIKTOK (TT) ----------------
-  tt_like_rate: 35,
+  tt_like_rate: 42,
   tt_like_min: 50,
   tt_like_permanent: false,
 
