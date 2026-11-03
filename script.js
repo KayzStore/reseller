@@ -1,31 +1,3 @@
-// Ambil harga & kontak dari prices.js (harus di-load SEBELUM file ini di index.html)
-function ov(key, fallback){
-  const val = (typeof KAYZ_PRICES !== 'undefined') ? KAYZ_PRICES[key] : undefined;
-  return (val !== undefined && val !== null && val !== '') ? val : fallback;
-}
-
-const SERVICES = {
-'Instagram (IG)': [
-{label:'Like', rate:Number(ov('ig_like_rate',10)), unit:'like', min:Number(ov('ig_like_min',10)), permanent:ov('ig_like_permanent',true), presets:[10,100,250,500]},
-{label:'Views', rate:Number(ov('ig_views_rate',1)), unit:'views', min:Number(ov('ig_views_min',100)), permanent:ov('ig_views_permanent',true), presets:[100,1000,5000,10000]},
-{label:'Followers', rate:Number(ov('ig_followers_rate',50)), unit:'followers', min:Number(ov('ig_followers_min',20)), permanent:ov('ig_followers_permanent',false), presets:[20,100,250,500]}
-],
-'TikTok (TT)': [
-{label:'Like', rate:Number(ov('tt_like_rate',10)), unit:'like', min:Number(ov('tt_like_min',10)), permanent:ov('tt_like_permanent',true), presets:[10,100,250,500]},
-{label:'Views', rate:Number(ov('tt_views_rate',1)), unit:'views', min:Number(ov('tt_views_min',100)), permanent:ov('tt_views_permanent',true), presets:[100,500,1000,5000]},
-{label:'Followers', rate:Number(ov('tt_followers_rate',50)), unit:'followers', min:Number(ov('tt_followers_min',10)), permanent:ov('tt_followers_permanent',false), presets:[10,50,100,500]}
-],
-'WhatsApp (WA)': [
-{label:'Pengikut', rate:Number(ov('wa_pengikut_rate',10)), unit:'pengikut', min:Number(ov('wa_pengikut_min',10)), permanent:ov('wa_pengikut_permanent',false), presets:[10,100,250,500]},
-{label:'Reaction', rate:Number(ov('wa_reaction_rate',1)), unit:'reaction', min:Number(ov('wa_reaction_min',10)), permanent:ov('wa_reaction_permanent',true), presets:[10,100,1000,5000], note:'Pilih mix acak atau 1 emoji'},
-{label:'Polling Vote', rate:Number(ov('wa_vote_rate',40)), unit:'vote', min:Number(ov('wa_vote_min',10)), permanent:ov('wa_vote_permanent',true), presets:[10,25,50,100]}
-]
-};
-function permText(isPerm){
-return isPerm
-? ov('note_permanent','Permanen (tidak akan turun)')
-: ov('note_nonpermanent','Tidak permanen (bisa turun sewaktu-waktu)');
-}
 const platformRow = document.getElementById('platformRow');
 const layananRow = document.getElementById('layananRow');
 const reactionField = document.getElementById('reactionField');
@@ -44,9 +16,6 @@ const bdNote = document.getElementById('bdNote');
 const bdNoteText = document.getElementById('bdNoteText');
 let currentService = null; // {label, rate, unit, platform}
 let reactionChoice = null; // {label, emoji}
-function fmtRp(n){
-return 'Rp ' + Math.round(n).toLocaleString('id-ID');
-}
 function setupSingleSelect(row, onChange){
 row.querySelectorAll('.chip').forEach(chip => {
 chip.addEventListener('click', () => {
@@ -63,17 +32,11 @@ renderLayanan(chip.dataset.val);
 function renderLayanan(platform){
 const list = SERVICES[platform] || [];
 layananRow.innerHTML = '';
-list.forEach(svc => {
+list.forEach((svc, i) => {
 const btn = document.createElement('button');
 btn.className = 'chip pink';
 btn.textContent = svc.label;
-btn.dataset.rate = svc.rate;
-btn.dataset.unit = svc.unit;
-btn.dataset.label = svc.label;
-btn.dataset.min = svc.min;
-btn.dataset.presets = svc.presets.join(',');
-btn.dataset.note = svc.note || '';
-btn.dataset.permanent = svc.permanent ? '1' : '0';
+btn.dataset.idx = i;
 layananRow.appendChild(btn);
 });
 currentService = null;
@@ -87,16 +50,9 @@ chip.addEventListener('click', () => {
 layananRow.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
 chip.classList.add('active');
 layananRow.closest('.field').classList.remove('invalid');
-currentService = {
-label: chip.dataset.label,
-rate: Number(chip.dataset.rate),
-unit: chip.dataset.unit,
-min: Number(chip.dataset.min),
-presets: chip.dataset.presets.split(',').map(Number),
-note: chip.dataset.note,
-permanent: chip.dataset.permanent === '1',
-platform: platform
-};
+const svc = list[Number(chip.dataset.idx)];
+if(!svc) return;
+currentService = Object.assign({}, svc, {platform: platform});
 jumlah.min = currentService.min;
 rateHint.textContent = `Tarif: ${fmtRp(currentService.rate)} per ${currentService.unit} · minimal ${currentService.min.toLocaleString('id-ID')} ${currentService.unit}` + (currentService.note ? ` · ${currentService.note}` : '');
 renderQtyQuick(currentService);
@@ -129,6 +85,11 @@ updateBreakdown();
 qtyQuick.appendChild(b);
 });
 }
+function getQty(){
+const raw = jumlah.value.trim();
+if(!/^\d+$/.test(raw)) return NaN;
+return Number(raw);
+}
 function getActiveVal(row){
 const el = row.querySelector('.chip.active');
 return el ? el.dataset.val : null;
@@ -142,19 +103,18 @@ bdNoteText.textContent = permText(currentService.permanent);
 }
 function updateBreakdown(){
 updateNote();
-if(!currentService || !jumlah.value || Number(jumlah.value) <= 0){
+const qty = getQty();
+if(!currentService || !Number.isFinite(qty) || qty <= 0){
 bdLayanan.textContent = currentService ? `${currentService.label} (${currentService.platform})` : '-';
 bdRate.textContent = currentService ? `${fmtRp(currentService.rate)} / ${currentService.unit}` : '-';
 bdJumlah.textContent = '-';
 bdTotal.textContent = fmtRp(0);
 return;
 }
-const qty = Number(jumlah.value);
-const total = qty * currentService.rate;
 bdLayanan.textContent = `${currentService.label} (${currentService.platform})`;
 bdRate.textContent = `${fmtRp(currentService.rate)} / ${currentService.unit}`;
 bdJumlah.textContent = `${qty.toLocaleString('id-ID')} ${currentService.unit}`;
-bdTotal.textContent = fmtRp(total);
+bdTotal.textContent = fmtRp(calcTotal(currentService, qty));
 }
 jumlah.addEventListener('input', updateBreakdown);
 function clearErrors(){
@@ -175,15 +135,20 @@ layananRow.closest('.field').classList.add('invalid');
 document.getElementById('err-layanan').classList.add('show');
 valid = false;
 }
-if(!jumlah.value || Number(jumlah.value) <= 0){
+const qty = getQty();
+const errJ = document.getElementById('err-jumlah');
+let msgJ = '';
+if(!Number.isFinite(qty) || qty <= 0){
+msgJ = 'Jumlah harus angka bulat, minimal 1.';
+} else if(currentService && qty < currentService.min){
+msgJ = `Jumlah minimal ${currentService.min.toLocaleString('id-ID')} ${currentService.unit}.`;
+} else if(qty > MAX_QTY){
+msgJ = `Jumlah maksimal ${MAX_QTY.toLocaleString('id-ID')} per pesanan.`;
+}
+if(msgJ){
 jumlah.closest('.field').classList.add('invalid');
-document.getElementById('err-jumlah').textContent = 'Jumlah wajib diisi (minimal 1).';
-document.getElementById('err-jumlah').classList.add('show');
-valid = false;
-} else if(currentService && Number(jumlah.value) < currentService.min){
-jumlah.closest('.field').classList.add('invalid');
-document.getElementById('err-jumlah').textContent = `Jumlah minimal ${currentService.min.toLocaleString('id-ID')} ${currentService.unit}.`;
-document.getElementById('err-jumlah').classList.add('show');
+errJ.textContent = msgJ;
+errJ.classList.add('show');
 valid = false;
 }
 if(currentService && currentService.unit === 'reaction' && !reactionChoice){
@@ -199,14 +164,19 @@ valid = false;
 return valid;
 }
 function buildText(){
-const platform = getActiveVal(platformRow);
-const qty = Number(jumlah.value);
-const total = qty * currentService.rate;
-const targetVal = target.value.trim();
-const layananLabel = currentService.unit === 'reaction' && reactionChoice
+// Ambil ulang dari SERVICES (frozen), bukan dari variabel/DOM yang bisa diutak-atik
+if(!currentService) return null;
+const platform = currentService.platform;
+const real = findService(platform, currentService.label);
+const qty = getQty();
+if(!real || !Number.isFinite(qty) || qty < real.min || qty > MAX_QTY) return null;
+const total = calcTotal(real, qty);
+const targetVal = target.value.trim().replace(/\s+/g, ' ').slice(0, 300);
+const layananLabel = real.unit === 'reaction' && reactionChoice
 ? `Reaction (${reactionChoice.label})`
-: currentService.label;
-return `*꒰꒰͡🔮 ִ ׄ SUNTIK SOSIAL MEDIA*\n\n˙ . platform/aplikasi : ${platform}\n˙ . layanan suntik : ${layananLabel}\n˙ . jumlah : ${qty.toLocaleString('id-ID')} ${currentService.unit}\n˙ . target : ${targetVal}\n˙ . total harga : ${fmtRp(total)}\n˙ . note : ${permText(currentService.permanent)}`;
+: real.label;
+const kode = orderCode({platform, layanan: layananLabel, qty, total, target: targetVal});
+return `*꒰꒰͡🔮 ִ ׄ SUNTIK SOSIAL MEDIA*\n\n˙ . platform/aplikasi : ${platform}\n˙ . layanan suntik : ${layananLabel}\n˙ . jumlah : ${qty.toLocaleString('id-ID')} ${real.unit}\n˙ . target : ${targetVal}\n˙ . total harga : ${fmtRp(total)}\n˙ . note : ${permText(real.permanent)}\n˙ . kode : ${kode}`;
 }
 const WA_NUMBER = ov('wa_number', '6285142017734');
 const WA_CHANNEL = ov('wa_channel', 'https://wa.me/channel/xxxxxxxx');
@@ -214,6 +184,7 @@ const WA_GROUP = ov('wa_group', 'https://chat.whatsapp.com/xxxxxxxx');
 orderBtn.addEventListener('click', () => {
 if(!validate()) return;
 const text = buildText();
+if(!text) return;
 const url = `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(text)}`;
 toast.classList.add('show');
 setTimeout(() => toast.classList.remove('show'), 2200);

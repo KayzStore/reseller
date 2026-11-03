@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>KAYZ — Cek Pesanan</title>
+<link rel="stylesheet" href="style.css">
+<style>
+.v-out{margin-top:14px;padding:14px;border-radius:12px;font-size:14px;line-height:1.6;display:none}
+.v-out.show{display:block}
+.v-out.ok{background:rgba(46,204,113,.12);border:1px solid #2ecc71}
+.v-out.bad{background:rgba(231,76,60,.12);border:1px solid #e74c3c}
+.v-out b{display:block;font-size:16px;margin-bottom:6px}
+textarea#raw{width:100%;min-height:200px;font:13px/1.5 monospace;padding:10px;border-radius:10px;box-sizing:border-box}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card">
+    <div class="card-title"><span class="dot"></span> Cek Keaslian Pesanan (Admin)</div>
+    <div class="field">
+      <div class="field-label">Tempel pesan WhatsApp dari pembeli</div>
+      <textarea id="raw" placeholder="Paste seluruh pesan pesanan di sini..."></textarea>
+    </div>
+    <button class="cta" id="checkBtn">Cek Pesanan</button>
+    <div class="v-out" id="out"></div>
+  </div>
+</div>
+
+<script src="prices.js"></script>
+<script src="core.js"></script>
+<script>
+function line(text, label){
+  // label harus ada di AWAL baris (setelah simbol), jadi isi target tidak bisa menyamar sebagai baris lain
+  const re = new RegExp('^[^\\w\\n]*' + label + '\\s*:\\s*(.+?)\\s*$', 'mi');
+  const m = text.match(re);
+  return m ? m[1] : null;
+}
+function digits(s){ return Number(String(s).replace(/[^\d]/g, '')); }
+function esc(s){ return String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+document.getElementById('checkBtn').addEventListener('click', () => {
+  const out = document.getElementById('out');
+  const text = document.getElementById('raw').value;
+  const platform = line(text, 'platform\\/aplikasi');
+  const layanan  = line(text, 'layanan suntik');
+  const jumlahS  = line(text, 'jumlah');
+  const targetV  = line(text, 'target');
+  const totalS   = line(text, 'total harga');
+  const kode     = line(text, 'kode');
+  const problems = [];
+
+  if(!platform || !layanan || !jumlahS || !targetV || !totalS){
+    problems.push('Format pesan tidak lengkap / tidak dikenali (kemungkinan diedit manual).');
+  }
+  let expected = null, claimed = null, qty = null;
+  if(platform && layanan && jumlahS && totalS){
+    qty = digits(jumlahS);
+    claimed = digits(totalS);
+    const label = layanan.replace(/\s*\(.*\)\s*$/, '');
+    const svc = findService(platform, label);
+    if(!svc){
+      problems.push('Platform/layanan tidak ada di daftar harga.');
+    } else {
+      expected = calcTotal(svc, qty);
+      if(qty < svc.min) problems.push(`Jumlah di bawah minimal (${svc.min}).`);
+      if(qty > MAX_QTY) problems.push('Jumlah melebihi batas per pesanan.');
+      if(claimed !== expected) problems.push(`Total harga TIDAK cocok. Di pesan: ${fmtRp(claimed)}, seharusnya: ${fmtRp(expected)}.`);
+    }
+    if(!kode){
+      problems.push('Kode verifikasi tidak ada.');
+    } else {
+      const want = orderCode({platform, layanan, qty, total: claimed, target: targetV});
+      if(want !== kode) problems.push('Kode verifikasi tidak valid (isi pesan diubah setelah dibuat).');
+    }
+  }
+
+  out.className = 'v-out show ' + (problems.length ? 'bad' : 'ok');
+  out.innerHTML = problems.length
+    ? '<b>⚠️ Mencurigakan / diubah</b>' + problems.map(p => '• ' + esc(p)).join('<br>') +
+      (expected !== null ? `<br><br>Harga yang benar: <b style="display:inline">${fmtRp(expected)}</b>` : '')
+    : `<b>✅ Pesanan asli</b>Total ${fmtRp(expected)} sesuai daftar harga.`;
+});
+</script>
+</body>
+</html>
