@@ -68,6 +68,7 @@ document.getElementById('checkBtn').addEventListener('click', () => {
       if(qty > MAX_QTY) problems.push('Jumlah melebihi batas per pesanan.');
       if(claimed !== expected) problems.push(`Total harga TIDAK cocok. Di pesan: ${fmtRp(claimed)}, seharusnya: ${fmtRp(expected)}.`);
     }
+    if(!isHttpsUrl(targetV)) problems.push('Target bukan link https:// yang valid.');
     if(!kode){
       problems.push('Kode verifikasi tidak ada.');
     } else {
@@ -80,7 +81,21 @@ document.getElementById('checkBtn').addEventListener('click', () => {
   out.innerHTML = problems.length
     ? '<b>⚠️ Mencurigakan / diubah</b>' + problems.map(p => '• ' + esc(p)).join('<br>') +
       (expected !== null ? `<br><br>Harga yang benar: <b style="display:inline">${fmtRp(expected)}</b>` : '')
-    : `<b>✅ Pesanan asli</b>Total ${fmtRp(expected)} sesuai daftar harga.`;
+    : `<b>✅ Pesanan asli</b>Total ${fmtRp(expected)} sesuai daftar harga.<br>Target: ${esc(targetV)}<br><button class="cta" id="copyBtn" style="margin-top:10px">Copy Target</button>`;
+  if(!problems.length){
+    document.getElementById('copyBtn').addEventListener('click', async (e) => {
+      const btn = e.currentTarget;
+      try{
+        await navigator.clipboard.writeText(targetV);
+      }catch(err){
+        const ta = document.createElement('textarea');
+        ta.value = targetV; document.body.appendChild(ta); ta.select();
+        document.execCommand('copy'); ta.remove();
+      }
+      btn.textContent = '✓ Target tersalin';
+      setTimeout(() => btn.textContent = 'Copy Target', 1500);
+    });
+  }
 });
 </script>
 </body>

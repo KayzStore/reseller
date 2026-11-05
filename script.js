@@ -156,7 +156,7 @@ reactionField.classList.add('invalid');
 document.getElementById('err-reaction').classList.add('show');
 valid = false;
 }
-if(!target.value.trim()){
+if(!isHttpsUrl(target.value)){
 target.closest('.field').classList.add('invalid');
 document.getElementById('err-target').classList.add('show');
 valid = false;
@@ -170,6 +170,7 @@ const platform = currentService.platform;
 const real = findService(platform, currentService.label);
 const qty = getQty();
 if(!real || !Number.isFinite(qty) || qty < real.min || qty > MAX_QTY) return null;
+if(!isHttpsUrl(target.value)) return null;
 const total = calcTotal(real, qty);
 const targetVal = target.value.trim().replace(/\s+/g, ' ').slice(0, 300);
 const layananLabel = real.unit === 'reaction' && reactionChoice
@@ -255,7 +256,7 @@ target:'jumlah'
 },
 {
 icon:'4️⃣', title:'Isi Target',
-body:'Masukin link postingan atau username target di sini — pastikan linknya benar dan bisa diakses publik.',
+body:'Masukin link target (wajib diawali https://) di sini — pastikan linknya benar dan bisa diakses publik.',
 target:'target'
 },
 {

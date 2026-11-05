@@ -103,9 +103,9 @@
 
     <div class="field">
       <div class="field-label"><span class="n">4</span> Target</div>
-      <input type="text" id="target" placeholder="Link postingan atau username">
-      <div class="hint">Contoh: instagram.com/p/xxxx atau @username</div>
-      <div class="err" id="err-target">Target wajib diisi.</div>
+      <input type="text" id="target" inputmode="url" autocapitalize="off" autocomplete="off" placeholder="https://...">
+      <div class="hint">Wajib link diawali https://, contoh: https://instagram.com/p/xxxx</div>
+      <div class="err" id="err-target">Target wajib berupa link yang diawali https://</div>
     </div>
 
     <div class="breakdown" id="breakdownBox">
@@ -131,7 +131,7 @@
     <div class="feat-grid">
       <div class="feat"><span class="check">✓</span> Harga dihitung otomatis dari jumlah yang kamu pilih</div>
       <div class="feat"><span class="check">✓</span> Bisa beli satuan, nggak harus kelipatan 100</div>
-      <div class="feat"><span class="check">✓</span> Pastikan link/username target sudah benar & bisa diakses publik</div>
+      <div class="feat"><span class="check">✓</span> Pastikan link target (https://) sudah benar & bisa diakses publik</div>
       <div class="feat"><span class="check">✓</span> Proses jalan setelah admin konfirmasi pesanan</div>
     </div>
   </section>

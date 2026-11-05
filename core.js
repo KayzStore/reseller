@@ -37,6 +37,16 @@ if(typeof KAYZ_PRICES !== 'undefined') Object.freeze(KAYZ_PRICES);
 
 const MAX_QTY = 1000000;
 
+// Target wajib link https:// yang valid
+function isHttpsUrl(s){
+  s = String(s || '').trim();
+  if(!/^https:\/\//i.test(s) || /\s/.test(s)) return false;
+  try{
+    const u = new URL(s);
+    return u.protocol === 'https:' && u.hostname.includes('.') && !u.username && !u.password;
+  }catch(e){ return false; }
+}
+
 function fmtRp(n){
 return 'Rp ' + Math.round(n).toLocaleString('id-ID');
 }
