@@ -10,12 +10,17 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
+<script>try{var b=localStorage.getItem('kayz_brand');if(b)document.documentElement.setAttribute('data-brand',b)}catch(e){}</script>
 </head>
 <body>
 
 <header class="top">
   <a class="logo" href="./">kayz<i>.</i></a>
-  <span class="tag">Cek pesanan</span>
+  <div class="top-r">
+    <span class="tag">Cek pesanan</span>
+    <button class="theme-btn" id="themeBtn" type="button" aria-label="Pilih warna" aria-expanded="false"></button>
+  </div>
+  <div class="theme-pop" id="themePop" role="group" aria-label="Pilih warna"><div class="sw-list" id="swList"></div></div>
 </header>
 
 <main class="wrap">
@@ -43,6 +48,7 @@
 
 <script src="prices.js"></script>
 <script src="core.js"></script>
+<script src="ui.js"></script>
 <script>
 (() => {
   'use strict';

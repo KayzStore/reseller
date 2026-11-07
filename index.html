@@ -4,17 +4,22 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="light dark">
-<title>KAYZ — Suntik Sosmed</title>
+<title>Suntik All Sosial Media</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
+<script>try{var b=localStorage.getItem('kayz_brand');if(b)document.documentElement.setAttribute('data-brand',b)}catch(e){}</script>
 </head>
 <body>
 
 <header class="top">
-  <a class="logo" href="./">kayz<i>.</i></a>
-  <button class="link-btn" id="helpOpen" type="button">Bantuan</button>
+  <a class="logo" href="./">Suntik All<br>Sosial Media<i>.</i></a>
+  <div class="top-r">
+    <button class="link-btn" id="helpOpen" type="button">Bantuan</button>
+    <button class="theme-btn" id="themeBtn" type="button" aria-label="Pilih warna" aria-expanded="false"></button>
+  </div>
+  <div class="theme-pop" id="themePop" role="group" aria-label="Pilih warna"><div class="sw-list" id="swList"></div></div>
 </header>
 
 <main class="wrap">
@@ -113,7 +118,6 @@
     <a class="list-row" id="linkGroup" href="#" target="_blank" rel="noopener">Grup WhatsApp <span>↗</span></a>
   </section>
 
-  <footer class="foot">KAYZ.ID © 2026 · Layanan pihak ketiga</footer>
 </main>
 
 <div class="sheet-wrap" id="helpOverlay">
@@ -151,6 +155,7 @@
 
 <script src="prices.js"></script>
 <script src="core.js"></script>
+<script src="ui.js"></script>
 <script src="script.js"></script>
 </body>
 </html>
