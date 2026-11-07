@@ -2,159 +2,133 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>KAYZ — Kalkulator Suntik Sosmed</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>KAYZ — Suntik Sosmed</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<div class="marquee-bar" id="marqueeBar">
-  <div class="marquee-track" id="marqueeTrack"></div>
-</div>
-
-<div class="help-overlay" id="helpOverlay">
-  <div class="help-modal">
-    <div class="help-head">
-      <h3 class="help-title">Perlu bantuan?</h3>
-      <button class="help-close" id="helpClose">Tutup ✕</button>
-    </div>
-    <a class="help-opt" id="helpChat" href="#" target="_blank">
-      <div class="ic">💬</div>
-      <div class="txt"><b>Chat Admin</b><span>Tanya-tanya atau lapor pesanan lewat WhatsApp</span></div>
-    </a>
-    <a class="help-opt" id="helpChannel" href="#" target="_blank">
-      <div class="ic">📢</div>
-      <div class="txt"><b>Saluran Kayz</b><span>Info promo & update layanan terbaru</span></div>
-    </a>
-    <a class="help-opt" id="helpGroup" href="#" target="_blank">
-      <div class="ic">👥</div>
-      <div class="txt"><b>Group Komunitas</b><span>Gabung diskusi & tanya jawab bareng member lain</span></div>
-    </a>
-  </div>
-</div>
-
-<header>
-  <div class="logo">KAYZ<span>.</span>ID</div>
-  <div class="logo-tag">SUNTIK SOSMED</div>
+<header class="top">
+  <a class="logo" href="./">kayz<i>.</i></a>
+  <button class="link-btn" id="helpOpen" type="button">Bantuan</button>
 </header>
 
-<div class="wrap">
+<main class="wrap">
 
-  <section class="hero">
-    <div class="eyebrow">🔮 Kalkulator Suntik Sosmed</div>
-    <h1>Beli <em>satuan</em>, harga otomatis kehitung</h1>
-    <p class="sub">Pilih platform & layanan, masukkan jumlah sesuai kebutuhan — mau beli 10, 250, atau 10.000, harga langsung menyesuaikan.</p>
-
-    <div class="rate-grid" id="rateGrid">
-      <div class="rate-card"><b>Rp10</b><span>per Like — IG min 10, TT min 10</span></div>
-      <div class="rate-card"><b>Rp1</b><span>per View — IG min 100, TT min 100</span></div>
-      <div class="rate-card"><b>Rp10</b><span>per Pengikut (WA, min 10)</span></div>
-      <div class="rate-card"><b>Rp50</b><span>per Followers — IG min 20, TT min 10</span></div>
-      <div class="rate-card"><b>Rp1</b><span>per Reaction (WA, min 10, pilih mix atau 1 emoji)</span></div>
-      <div class="rate-card"><b>Rp40</b><span>per Vote Polling (WA, min 10)</span></div>
-    </div>
+  <section class="hero rise" style="--i:0">
+    <h1>Hitung pesananmu,<br><em>kirim lewat WhatsApp.</em></h1>
+    <details class="prices">
+      <summary>Daftar harga</summary>
+      <div class="pl" id="rateGrid"></div>
+    </details>
   </section>
 
-  <div class="card">
-    <div class="card-title"><span class="dot"></span> Form Pesanan Suntik Sosmed</div>
+  <section class="panel rise" style="--i:1">
 
     <div class="field">
-      <div class="field-label"><span class="n">1</span> Platform / Aplikasi</div>
-      <div class="chip-row" id="platformRow">
-        <button class="chip" data-val="Instagram (IG)">IG</button>
-        <button class="chip" data-val="TikTok (TT)">TT</button>
-        <button class="chip" data-val="WhatsApp (WA)">WA</button>
+      <div class="lbl"><i>01</i>Platform</div>
+      <div class="seg" id="platformRow">
+        <span class="thumb"></span>
+        <button class="chip" type="button" data-val="Instagram (IG)">Instagram</button>
+        <button class="chip" type="button" data-val="TikTok (TT)">TikTok</button>
+        <button class="chip" type="button" data-val="WhatsApp (WA)">WhatsApp</button>
       </div>
-      <div class="err" id="err-platform">Pilih salah satu platform.</div>
+      <div class="err" id="err-platform">Pilih platform.</div>
     </div>
 
     <div class="field">
-      <div class="field-label"><span class="n">2</span> Layanan Suntik</div>
+      <div class="lbl"><i>02</i>Layanan</div>
       <div class="chip-row" id="layananRow">
-        <span class="empty-hint">Pilih platform dulu ya.</span>
+        <span class="empty-hint">Pilih platform dulu</span>
       </div>
       <div class="hint" id="rateHint"></div>
-      <div class="err" id="err-layanan">Pilih salah satu layanan.</div>
+      <div class="err" id="err-layanan">Pilih layanan.</div>
     </div>
 
-    <div class="field" id="reactionField" style="display:none;">
-      <div class="field-label">💬 Pilihan Reaction</div>
-      <div class="chip-row" id="reactionRow">
-        <button class="chip pink" data-val="Mix Acak (👍❤️😂😯🥺🙏)" data-emoji="👍❤️😂😯🥺🙏">Mix Acak 👍❤️😂😯🥺🙏</button>
-        <button class="chip pink" data-val="👍" data-emoji="👍">👍</button>
-        <button class="chip pink" data-val="❤️" data-emoji="❤️">❤️</button>
-        <button class="chip pink" data-val="😂" data-emoji="😂">😂</button>
-        <button class="chip pink" data-val="😯" data-emoji="😯">😯</button>
-        <button class="chip pink" data-val="🥺" data-emoji="🥺">🥺</button>
-        <button class="chip pink" data-val="🙏" data-emoji="🙏">🙏</button>
+    <div class="collapse" id="reactionWrap">
+      <div>
+        <div class="field" id="reactionField">
+          <div class="lbl"><i>—</i>Reaction</div>
+          <div class="chip-row" id="reactionRow">
+            <button class="chip" type="button" data-val="Mix Acak (👍❤️😂😯🥺🙏)" data-emoji="👍❤️😂😯🥺🙏">Mix acak</button>
+            <button class="chip" type="button" data-val="👍" data-emoji="👍">👍</button>
+            <button class="chip" type="button" data-val="❤️" data-emoji="❤️">❤️</button>
+            <button class="chip" type="button" data-val="😂" data-emoji="😂">😂</button>
+            <button class="chip" type="button" data-val="😯" data-emoji="😯">😯</button>
+            <button class="chip" type="button" data-val="🥺" data-emoji="🥺">🥺</button>
+            <button class="chip" type="button" data-val="🙏" data-emoji="🙏">🙏</button>
+          </div>
+          <div class="err" id="err-reaction">Pilih mix atau satu emoji.</div>
+        </div>
       </div>
-      <div class="err" id="err-reaction">Pilih mix acak atau salah satu emoji.</div>
     </div>
 
     <div class="field">
-      <div class="field-label"><span class="n">3</span> Jumlah <span class="opt">(bisa beli satuan, bebas berapa aja)</span></div>
-      <input type="number" id="jumlah" placeholder="Contoh: 250" min="1" step="1" inputmode="numeric">
+      <label class="lbl" for="jumlah"><i>03</i>Jumlah</label>
+      <input type="number" id="jumlah" placeholder="0" min="1" step="1" inputmode="numeric">
       <div class="qty-quick" id="qtyQuick"></div>
-      <div class="err" id="err-jumlah">Jumlah wajib diisi (minimal 1).</div>
+      <div class="err" id="err-jumlah">Jumlah wajib diisi.</div>
     </div>
 
     <div class="field">
-      <div class="field-label"><span class="n">4</span> Target</div>
-      <input type="text" id="target" inputmode="url" autocapitalize="off" autocomplete="off" placeholder="https://...">
-      <div class="hint">Wajib link diawali https://, contoh: https://instagram.com/p/xxxx</div>
-      <div class="err" id="err-target">Target wajib berupa link yang diawali https://</div>
+      <label class="lbl" for="target"><i>04</i>Target</label>
+      <input type="text" id="target" inputmode="url" autocapitalize="off" autocomplete="off" spellcheck="false" placeholder="https://">
+      <div class="err" id="err-target">Isi dengan link berawalan https://</div>
     </div>
 
-    <div class="breakdown" id="breakdownBox">
-      <div class="bd-row"><span>Layanan</span><span id="bdLayanan">-</span></div>
-      <div class="bd-row"><span>Harga Satuan</span><span id="bdRate">-</span></div>
-      <div class="bd-row"><span>Jumlah</span><span id="bdJumlah">-</span></div>
-      <div class="bd-note" id="bdNote" style="display:none;">
-        <span class="bd-note-label">📝 Note</span>
-        <span class="bd-note-text" id="bdNoteText">-</span>
-      </div>
-      <div class="bd-total">
-        <span class="label">💰 Total Harga</span>
-        <span class="value" id="bdTotal">Rp 0</span>
-      </div>
+    <div class="sum" id="breakdownBox">
+      <div class="row"><span>Tarif</span><span id="bdRate">–</span></div>
+      <div class="row"><span>Jumlah</span><span id="bdJumlah">–</span></div>
+      <div class="row note off" id="bdNote"><span>Status</span><span class="note-text"><i class="dot"></i><span id="bdNoteText">–</span></span></div>
+      <div class="total"><span>Total</span><strong id="bdTotal">Rp 0</strong></div>
     </div>
 
-    <button class="cta" id="orderBtn">Kirim Pesanan via WhatsApp</button>
-    <div class="toast" id="toast">✓ Membuka WhatsApp admin Kayz...</div>
-  </div>
-
-  <section class="features">
-    <h2>Yang perlu diperhatikan</h2>
-    <div class="feat-grid">
-      <div class="feat"><span class="check">✓</span> Harga dihitung otomatis dari jumlah yang kamu pilih</div>
-      <div class="feat"><span class="check">✓</span> Bisa beli satuan, nggak harus kelipatan 100</div>
-      <div class="feat"><span class="check">✓</span> Pastikan link target (https://) sudah benar & bisa diakses publik</div>
-      <div class="feat"><span class="check">✓</span> Proses jalan setelah admin konfirmasi pesanan</div>
-    </div>
+    <button class="cta" id="orderBtn" type="button">
+      <span class="cta-a">Kirim via WhatsApp</span>
+      <span class="cta-b">
+        <svg class="chk" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" pathLength="1"/></svg>
+        Membuka WhatsApp
+      </span>
+    </button>
+    <p class="after">Diproses setelah admin konfirmasi.</p>
   </section>
 
-  <footer>KAYZ.ID © 2026 — Layanan pihak ketiga, hasil menyesuaikan platform</footer>
-</div>
+  <footer class="foot">KAYZ.ID © 2026 · Layanan pihak ketiga</footer>
+</main>
 
-<button class="help-fab" id="helpFab" title="Cara order">?</button>
+<div class="sheet-wrap" id="helpOverlay">
+  <div class="sheet" role="dialog" aria-modal="true" aria-label="Bantuan">
+    <div class="grab"></div>
+    <div class="sheet-head">
+      <h3>Bantuan</h3>
+      <button class="link-btn" id="helpClose" type="button">Tutup</button>
+    </div>
+    <button class="list-row" id="helpTour" type="button">Cara order <span>→</span></button>
+    <a class="list-row" id="helpChat" href="#" target="_blank" rel="noopener">Chat admin <span>↗</span></a>
+    <a class="list-row" id="helpChannel" href="#" target="_blank" rel="noopener">Saluran <span>↗</span></a>
+    <a class="list-row" id="helpGroup" href="#" target="_blank" rel="noopener">Group komunitas <span>↗</span></a>
+  </div>
+</div>
 
 <div class="tut-highlight" id="tutHighlight"></div>
 <div class="tut-overlay" id="tutOverlay">
   <div class="tut-modal">
     <div class="tut-head">
-      <span class="tut-eyebrow" id="tutStepLabel">Langkah 1/4</span>
-      <button class="tut-skip" id="tutSkip">Lewati ✕</button>
+      <span class="tut-count" id="tutStepLabel">1 / 6</span>
+      <button class="link-btn" id="tutSkip" type="button">Lewati</button>
     </div>
-    <div class="tut-icon" id="tutIcon">👋</div>
-    <h3 class="tut-title" id="tutTitle">Selamat datang di Kayz!</h3>
-    <p class="tut-body" id="tutBody">Bingung mulai dari mana? Ikuti 4 langkah cepat ini biar order kamu langsung diproses tanpa ribet.</p>
-    <div class="tut-dots" id="tutDots"></div>
+    <div class="tut-bar"><i id="tutBar"></i></div>
+    <div class="tut-content" id="tutContent">
+      <h3 id="tutTitle"></h3>
+      <p id="tutBody"></p>
+    </div>
     <div class="tut-actions">
-      <button class="tut-btn hidden" id="tutBack">Kembali</button>
-      <button class="tut-btn primary" id="tutNext">Lanjut</button>
+      <button class="btn ghost hidden" id="tutBack" type="button">Kembali</button>
+      <button class="btn solid" id="tutNext" type="button">Lanjut</button>
     </div>
   </div>
 </div>

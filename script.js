@@ -1,444 +1,486 @@
-const platformRow = document.getElementById('platformRow');
-const layananRow = document.getElementById('layananRow');
-const reactionField = document.getElementById('reactionField');
-const reactionRow = document.getElementById('reactionRow');
-const rateHint = document.getElementById('rateHint');
-const jumlah = document.getElementById('jumlah');
-const qtyQuick = document.getElementById('qtyQuick');
-const target = document.getElementById('target');
-const orderBtn = document.getElementById('orderBtn');
-const toast = document.getElementById('toast');
-const bdLayanan = document.getElementById('bdLayanan');
-const bdRate = document.getElementById('bdRate');
-const bdJumlah = document.getElementById('bdJumlah');
-const bdTotal = document.getElementById('bdTotal');
-const bdNote = document.getElementById('bdNote');
-const bdNoteText = document.getElementById('bdNoteText');
-let currentService = null; // {label, rate, unit, platform}
-let reactionChoice = null; // {label, emoji}
-function setupSingleSelect(row, onChange){
-row.querySelectorAll('.chip').forEach(chip => {
-chip.addEventListener('click', () => {
-row.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
-chip.classList.add('active');
-row.closest('.field').classList.remove('invalid');
-if(onChange) onChange(chip);
-});
-});
-}
-setupSingleSelect(platformRow, (chip) => {
-renderLayanan(chip.dataset.val);
-});
-function renderLayanan(platform){
-const list = SERVICES[platform] || [];
-layananRow.innerHTML = '';
-list.forEach((svc, i) => {
-const btn = document.createElement('button');
-btn.className = 'chip pink';
-btn.textContent = svc.label;
-btn.dataset.idx = i;
-layananRow.appendChild(btn);
-});
-currentService = null;
-rateHint.textContent = '';
-jumlah.value = '';
-jumlah.min = 1;
-qtyQuick.innerHTML = '';
-updateBreakdown();
-layananRow.querySelectorAll('.chip').forEach(chip => {
-chip.addEventListener('click', () => {
-layananRow.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
-chip.classList.add('active');
-layananRow.closest('.field').classList.remove('invalid');
-const svc = list[Number(chip.dataset.idx)];
-if(!svc) return;
-currentService = Object.assign({}, svc, {platform: platform});
-jumlah.min = currentService.min;
-rateHint.textContent = `Tarif: ${fmtRp(currentService.rate)} per ${currentService.unit} · minimal ${currentService.min.toLocaleString('id-ID')} ${currentService.unit}` + (currentService.note ? ` · ${currentService.note}` : '');
-renderQtyQuick(currentService);
-reactionChoice = null;
-if(currentService.unit === 'reaction'){
-reactionField.style.display = 'block';
-reactionRow.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
-} else {
-reactionField.style.display = 'none';
-}
-updateBreakdown();
-});
-});
-}
-setupSingleSelect(reactionRow, (chip) => {
-reactionChoice = { label: chip.dataset.val, emoji: chip.dataset.emoji };
-});
-function renderQtyQuick(svc){
-qtyQuick.innerHTML = '';
-svc.presets.forEach(p => {
-const b = document.createElement('button');
-b.type = 'button';
-b.className = 'qty-btn';
-b.textContent = p.toLocaleString('id-ID');
-b.addEventListener('click', () => {
-jumlah.value = p;
-jumlah.closest('.field').classList.remove('invalid');
-updateBreakdown();
-});
-qtyQuick.appendChild(b);
-});
-}
-function getQty(){
-const raw = jumlah.value.trim();
-if(!/^\d+$/.test(raw)) return NaN;
-return Number(raw);
-}
-function getActiveVal(row){
-const el = row.querySelector('.chip.active');
-return el ? el.dataset.val : null;
-}
-function updateNote(){
-if(!currentService){ bdNote.style.display = 'none'; return; }
-bdNote.style.display = 'flex';
-bdNote.classList.toggle('perm', currentService.permanent);
-bdNote.classList.toggle('nonperm', !currentService.permanent);
-bdNoteText.textContent = permText(currentService.permanent);
-}
-function updateBreakdown(){
-updateNote();
-const qty = getQty();
-if(!currentService || !Number.isFinite(qty) || qty <= 0){
-bdLayanan.textContent = currentService ? `${currentService.label} (${currentService.platform})` : '-';
-bdRate.textContent = currentService ? `${fmtRp(currentService.rate)} / ${currentService.unit}` : '-';
-bdJumlah.textContent = '-';
-bdTotal.textContent = fmtRp(0);
-return;
-}
-bdLayanan.textContent = `${currentService.label} (${currentService.platform})`;
-bdRate.textContent = `${fmtRp(currentService.rate)} / ${currentService.unit}`;
-bdJumlah.textContent = `${qty.toLocaleString('id-ID')} ${currentService.unit}`;
-bdTotal.textContent = fmtRp(calcTotal(currentService, qty));
-}
-jumlah.addEventListener('input', updateBreakdown);
-function clearErrors(){
-document.querySelectorAll('.field').forEach(f => f.classList.remove('invalid'));
-document.querySelectorAll('.err').forEach(e => e.classList.remove('show'));
-}
-function validate(){
-clearErrors();
-let valid = true;
-const platform = getActiveVal(platformRow);
-if(!platform){
-platformRow.closest('.field').classList.add('invalid');
-document.getElementById('err-platform').classList.add('show');
-valid = false;
-}
-if(!currentService){
-layananRow.closest('.field').classList.add('invalid');
-document.getElementById('err-layanan').classList.add('show');
-valid = false;
-}
-const qty = getQty();
-const errJ = document.getElementById('err-jumlah');
-let msgJ = '';
-if(!Number.isFinite(qty) || qty <= 0){
-msgJ = 'Jumlah harus angka bulat, minimal 1.';
-} else if(currentService && qty < currentService.min){
-msgJ = `Jumlah minimal ${currentService.min.toLocaleString('id-ID')} ${currentService.unit}.`;
-} else if(qty > MAX_QTY){
-msgJ = `Jumlah maksimal ${MAX_QTY.toLocaleString('id-ID')} per pesanan.`;
-}
-if(msgJ){
-jumlah.closest('.field').classList.add('invalid');
-errJ.textContent = msgJ;
-errJ.classList.add('show');
-valid = false;
-}
-if(currentService && currentService.unit === 'reaction' && !reactionChoice){
-reactionField.classList.add('invalid');
-document.getElementById('err-reaction').classList.add('show');
-valid = false;
-}
-if(!isHttpsUrl(target.value)){
-target.closest('.field').classList.add('invalid');
-document.getElementById('err-target').classList.add('show');
-valid = false;
-}
-return valid;
-}
-function buildText(){
-// Ambil ulang dari SERVICES (frozen), bukan dari variabel/DOM yang bisa diutak-atik
-if(!currentService) return null;
-const platform = currentService.platform;
-const real = findService(platform, currentService.label);
-const qty = getQty();
-if(!real || !Number.isFinite(qty) || qty < real.min || qty > MAX_QTY) return null;
-if(!isHttpsUrl(target.value)) return null;
-const total = calcTotal(real, qty);
-const targetVal = target.value.trim().replace(/\s+/g, ' ').slice(0, 300);
-const layananLabel = real.unit === 'reaction' && reactionChoice
-? `Reaction (${reactionChoice.label})`
-: real.label;
-const kode = orderCode({platform, layanan: layananLabel, qty, total, target: targetVal});
-return `*꒰꒰͡🔮 ִ ׄ SUNTIK SOSIAL MEDIA*\n\n˙ . platform/aplikasi : ${platform}\n˙ . layanan suntik : ${layananLabel}\n˙ . jumlah : ${qty.toLocaleString('id-ID')} ${real.unit}\n˙ . target : ${targetVal}\n˙ . total harga : ${fmtRp(total)}\n˙ . note : ${permText(real.permanent)}\n˙ . kode : ${kode}`;
-}
-const WA_NUMBER = ov('wa_number', '6285142017734');
-const WA_CHANNEL = ov('wa_channel', 'https://wa.me/channel/xxxxxxxx');
-const WA_GROUP = ov('wa_group', 'https://chat.whatsapp.com/xxxxxxxx');
-orderBtn.addEventListener('click', () => {
-if(!validate()) return;
-const text = buildText();
-if(!text) return;
-const url = `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(text)}`;
-toast.classList.add('show');
-setTimeout(() => toast.classList.remove('show'), 2200);
-window.open(url, '_blank');
-});
-function renderRateGrid(){
-const grid = document.getElementById('rateGrid');
-if(!grid) return;
-const ig = SERVICES['Instagram (IG)'];
-const tt = SERVICES['TikTok (TT)'];
-const wa = SERVICES['WhatsApp (WA)'];
-const find = (list, label) => list.find(s => s.label === label);
-const igLike = find(ig,'Like'), ttLike = find(tt,'Like');
-const igViews = find(ig,'Views'), ttViews = find(tt,'Views');
-const igFol = find(ig,'Followers'), ttFol = find(tt,'Followers');
-const waPeng = find(wa,'Pengikut');
-const waReact = find(wa,'Reaction');
-const waVote = find(wa,'Polling Vote');
-grid.innerHTML = `
-<div class="rate-card"><b>${fmtRp(igLike.rate)}</b><span>per Like — IG min ${igLike.min}, TT min ${ttLike.min}</span></div>
-<div class="rate-card"><b>${fmtRp(igViews.rate)}</b><span>per View — IG min ${igViews.min}, TT min ${ttViews.min}</span></div>
-<div class="rate-card"><b>${fmtRp(waPeng.rate)}</b><span>per Pengikut (WA, min ${waPeng.min})</span></div>
-<div class="rate-card"><b>${fmtRp(igFol.rate)}</b><span>per Followers — IG min ${igFol.min}, TT min ${ttFol.min}</span></div>
-<div class="rate-card"><b>${fmtRp(waReact.rate)}</b><span>per Reaction (WA, min ${waReact.min}, pilih mix atau 1 emoji)</span></div>
-<div class="rate-card"><b>${fmtRp(waVote.rate)}</b><span>per Vote Polling (WA, min ${waVote.min})</span></div>
-`;
-}
-renderRateGrid();
-const marqueeBar = document.getElementById('marqueeBar');
-const marqueeTrack = document.getElementById('marqueeTrack');
-const helpOverlay = document.getElementById('helpOverlay');
-const helpClose = document.getElementById('helpClose');
-const helpChat = document.getElementById('helpChat');
-const helpChannel = document.getElementById('helpChannel');
-const helpGroup = document.getElementById('helpGroup');
-const marqueeMsg = '📣 Perlu bantuan? Ketuk di sini untuk chat admin, gabung saluran & group Kayz';
-marqueeTrack.innerHTML = `<span>${marqueeMsg}</span><span>${marqueeMsg}</span>`;
-helpChat.href = `https://wa.me/${WA_NUMBER}`;
-helpChannel.href = WA_CHANNEL;
-helpGroup.href = WA_GROUP;
-function openHelp(){ helpOverlay.classList.add('show'); }
-function closeHelp(){ helpOverlay.classList.remove('show'); }
-marqueeBar.addEventListener('click', openHelp);
-helpClose.addEventListener('click', closeHelp);
-helpOverlay.addEventListener('click', (e) => {
-if(e.target === helpOverlay) closeHelp();
-});
-const tutSteps = [
-{
-icon:'👋', title:'Selamat datang di Kayz!',
-body:'Bingung mulai dari mana? Ikuti langkah-langkah cepat ini biar order kamu langsung diproses tanpa ribet.',
-target:null
-},
-{
-icon:'1️⃣', title:'Pilih Platform',
-body:'Klik salah satu platform dulu: <b>IG</b> (Instagram), <b>TT</b> (TikTok), atau <b>WA</b> (WhatsApp).',
-target:'platformRow'
-},
-{
-icon:'2️⃣', title:'Pilih Layanan Suntik',
-body:'Setelah platform dipilih, opsi layanan bakal muncul di sini — pilih salah satu: Like, Views, Followers, Pengikut, Reaction, atau Polling Vote.',
-target:'layananRow'
-},
-{
-icon:'3️⃣', title:'Isi Jumlah',
-body:'Masukin jumlah sesuai kebutuhan kamu di sini. Perhatikan <b>minimal</b> tiap layanan ya, ada catatan tarifnya di bawah kolom ini.',
-target:'jumlah'
-},
-{
-icon:'4️⃣', title:'Isi Target',
-body:'Masukin link target (wajib diawali https://) di sini — pastikan linknya benar dan bisa diakses publik.',
-target:'target'
-},
-{
-icon:'5️⃣', title:'Cek Total & Kirim Pesanan',
-body:'Total harga otomatis muncul di bagian rincian ini. Kalau sudah pas, klik tombol ini — WhatsApp bakal kebuka otomatis dengan pesanan lengkap kamu.',
-target:['breakdownBox','orderBtn']
-}
-];
-let tutIndex = 0;
-let spotlightRAF = null;
-const tutOverlay = document.getElementById('tutOverlay');
-const tutIcon = document.getElementById('tutIcon');
-const tutTitle = document.getElementById('tutTitle');
-const tutBody = document.getElementById('tutBody');
-const tutStepLabel = document.getElementById('tutStepLabel');
-const tutDots = document.getElementById('tutDots');
-const tutBack = document.getElementById('tutBack');
-const tutNext = document.getElementById('tutNext');
-const tutSkip = document.getElementById('tutSkip');
-const helpFab = document.getElementById('helpFab');
-function renderTutStep(){
-const step = tutSteps[tutIndex];
-tutIcon.textContent = step.icon;
-tutTitle.textContent = step.title;
-tutBody.innerHTML = step.body;
-tutStepLabel.textContent = `Langkah ${tutIndex + 1}/${tutSteps.length}`;
-tutDots.innerHTML = '';
-tutSteps.forEach((_, i) => {
-const d = document.createElement('span');
-d.className = 'tut-dot' + (i === tutIndex ? ' active' : '');
-tutDots.appendChild(d);
-});
-tutBack.classList.toggle('hidden', tutIndex === 0);
-tutNext.textContent = tutIndex === tutSteps.length - 1 ? 'Mulai Order' : 'Lanjut';
-moveSpotlight(step.target);
-}
+(() => {
+  'use strict';
 
-function moveSpotlight(target){
-const box = document.getElementById('tutHighlight');
-box.classList.remove('show');
-if(spotlightRAF){ cancelAnimationFrame(spotlightRAF); spotlightRAF = null; }
-if(!target){
-const cx = window.innerWidth / 2;
-const cy = window.innerHeight / 2;
-box.style.top = cy + 'px';
-box.style.left = cx + 'px';
-box.style.width = '0px';
-box.style.height = '0px';
-requestAnimationFrame(() => box.classList.add('show'));
-return;
-}
-const ids = Array.isArray(target) ? target : [target];
-// Highlight the whole labeled field (number + title + input), not just the
-// bare input/chip-row, so steps like "2 Layanan Suntik" zoom in on the
-// heading too instead of only the small hint text inside it.
-const els = ids.map(id => document.getElementById(id))
-.filter(Boolean)
-.map(el => el.closest('.field') || el);
-if(els.length === 0){
-return;
-}
-// The tutorial modal is pinned to the bottom of the screen, so scrolling
-// must leave room for it instead of centering blindly (which can hide
-// the highlighted element, e.g. the WhatsApp order button, behind it).
-const modal = document.querySelector('.tut-modal');
-const modalHeight = modal ? modal.getBoundingClientRect().height : 0;
-const safeTop = 20;
-const safeBottom = modalHeight + 20;
-const rects0 = els.map(el => el.getBoundingClientRect());
-const docTop = Math.min(...rects0.map(r => r.top)) + window.scrollY;
-const docBottom = Math.max(...rects0.map(r => r.bottom)) + window.scrollY;
-const elHeight = docBottom - docTop;
-const availableHeight = Math.max(window.innerHeight - safeTop - safeBottom, 50);
-let targetScroll;
-if(elHeight <= availableHeight){
-targetScroll = docTop - safeTop - (availableHeight - elHeight) / 2;
-} else {
-targetScroll = docTop - safeTop;
-}
-window.scrollTo({top: Math.max(targetScroll, 0), behavior:'smooth'});
-// Different browsers finish (or fake) smooth scrolling at very different
-// speeds, so guessing a fixed delay before measuring the element's
-// position is unreliable — on some phones it fires too early and the
-// highlight box lands in the wrong spot. Instead, keep re-measuring the
-// element every frame for a little while so the box continuously tracks
-// wherever it actually is and always ends up correct, no matter how the
-// browser scrolls.
-if(spotlightRAF) cancelAnimationFrame(spotlightRAF);
-const trackUntil = performance.now() + 1500;
-function trackBox(){
-const rects = els.map(el => el.getBoundingClientRect());
-const top = Math.min(...rects.map(r => r.top));
-const left = Math.min(...rects.map(r => r.left));
-const right = Math.max(...rects.map(r => r.right));
-const bottom = Math.max(...rects.map(r => r.bottom));
-const pad = 10;
-box.style.top = (top - pad) + 'px';
-box.style.left = (left - pad) + 'px';
-box.style.width = (right - left + pad * 2) + 'px';
-box.style.height = (bottom - top + pad * 2) + 'px';
-box.classList.add('show');
-if(performance.now() < trackUntil){
-spotlightRAF = requestAnimationFrame(trackBox);
-} else {
-spotlightRAF = null;
-}
-}
-trackBox();
-}
-function openTutorial(){
-tutIndex = 0;
-renderTutStep();
-tutOverlay.classList.add('show');
-lockPageScroll();
-}
-function closeTutorial(){
-tutOverlay.classList.remove('show');
-document.getElementById('tutHighlight').classList.remove('show');
-if(spotlightRAF){ cancelAnimationFrame(spotlightRAF); spotlightRAF = null; }
-try { localStorage.setItem('kayz_suntik_tutorial_seen', '1'); } catch(e) {}
-unlockPageScroll();
-// When the tutorial ends, bring the user back up to the very top of the
-// form (card title + "1 Platform/Aplikasi"), clear of the fixed marquee
-// bar, so they start filling it out from step 1 with no highlight left.
-const formCard = document.querySelector('.card');
-const marquee = document.querySelector('.marquee-bar');
-const marqueeHeight = marquee ? marquee.getBoundingClientRect().height : 0;
-if(formCard){
-const top = formCard.getBoundingClientRect().top + window.scrollY - marqueeHeight - 10;
-window.scrollTo({top: Math.max(top, 0), behavior:'smooth'});
-} else {
-window.scrollTo({top: 0, behavior:'smooth'});
-}
-}
-// While the tutorial is open, the page can only be navigated with the
-// Kembali/Lanjut/Lewati buttons — manual swipe/scroll/wheel on the
-// background is blocked. Scrolling inside the tutorial card itself (if its
-// text is long) and Claude's own programmatic scrollTo calls still work,
-// since those aren't touch/wheel events.
-function blockBackgroundScroll(e){
-const modal = e.target.closest ? e.target.closest('.tut-modal') : null;
-// Only let a swipe move the tutorial card's own content if that content
-// genuinely overflows and needs scrolling. Otherwise (the normal case,
-// since the card text is short) block it too, so a drag anywhere over the
-// tutorial — modal included — can never leak through and move the page
-// behind it.
-if(modal && modal.scrollHeight > modal.clientHeight + 1){
-return;
-}
-e.preventDefault();
-}
-function lockPageScroll(){
-document.addEventListener('touchmove', blockBackgroundScroll, {passive:false});
-document.addEventListener('wheel', blockBackgroundScroll, {passive:false});
-}
-function unlockPageScroll(){
-document.removeEventListener('touchmove', blockBackgroundScroll, {passive:false});
-document.removeEventListener('wheel', blockBackgroundScroll, {passive:false});
-}
-tutNext.addEventListener('click', () => {
-tutNext.disabled = true;
-document.getElementById('tutHighlight').classList.remove('show');
-setTimeout(() => {
-if(tutIndex < tutSteps.length - 1){
-tutIndex++;
-renderTutStep();
-} else {
-closeTutorial();
-}
-tutNext.disabled = false;
-}, 1000);
-});
-tutBack.addEventListener('click', () => {
-if(tutIndex > 0){
-tutIndex--;
-renderTutStep();
-}
-});
-tutSkip.addEventListener('click', closeTutorial);
-helpFab.addEventListener('click', openTutorial);
-try {
-if(!localStorage.getItem('kayz_suntik_tutorial_seen')){
-setTimeout(openTutorial, 700);
-}
-} catch(e) { /* localStorage blocked, skip auto-tutorial */ }
+  const $ = id => document.getElementById(id);
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  const platformRow = $('platformRow');
+  const layananRow = $('layananRow');
+  const reactionWrap = $('reactionWrap');
+  const reactionField = $('reactionField');
+  const reactionRow = $('reactionRow');
+  const rateHint = $('rateHint');
+  const jumlah = $('jumlah');
+  const qtyQuick = $('qtyQuick');
+  const target = $('target');
+  const orderBtn = $('orderBtn');
+  const bdRate = $('bdRate');
+  const bdJumlah = $('bdJumlah');
+  const bdTotal = $('bdTotal');
+  const bdNote = $('bdNote');
+  const bdNoteText = $('bdNoteText');
+
+  let currentService = null; // {label, rate, unit, platform, ...}
+  let reactionChoice = null; // {label, emoji}
+
+  // replay animasi CSS pada elemen yang sama
+  function restart(el, cls) {
+    el.classList.remove(cls);
+    void el.offsetWidth;
+    el.classList.add(cls);
+  }
+
+  /* ---------- platform (segmented + thumb meluncur) ---------- */
+  const thumb = platformRow.querySelector('.thumb');
+
+  function moveThumb(chip, instant) {
+    if (!chip) return;
+    const place = () => {
+      thumb.style.width = chip.offsetWidth + 'px';
+      thumb.style.transform = `translateX(${chip.offsetLeft}px)`;
+    };
+    if (instant || !thumb.classList.contains('on')) {
+      thumb.style.transition = 'none';
+      place();
+      void thumb.offsetWidth;
+      thumb.style.transition = '';
+      thumb.classList.add('on');
+    } else {
+      place();
+    }
+  }
+  window.addEventListener('resize', () => moveThumb(platformRow.querySelector('.chip.active'), true));
+
+  function setupSingleSelect(row, onChange) {
+    row.querySelectorAll('.chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        row.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+        chip.classList.add('active');
+        row.closest('.field').classList.remove('invalid');
+        if (onChange) onChange(chip);
+      });
+    });
+  }
+
+  setupSingleSelect(platformRow, chip => {
+    moveThumb(chip);
+    renderLayanan(chip.dataset.val);
+  });
+
+  /* ---------- layanan ---------- */
+  function renderLayanan(platform) {
+    const list = SERVICES[platform] || [];
+    layananRow.innerHTML = '';
+    list.forEach((svc, i) => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'chip';
+      btn.textContent = svc.label;
+      btn.dataset.idx = i;
+      btn.style.setProperty('--i', i);
+      layananRow.appendChild(btn);
+    });
+
+    currentService = null;
+    reactionChoice = null;
+    rateHint.textContent = '';
+    jumlah.value = '';
+    jumlah.min = 1;
+    qtyQuick.innerHTML = '';
+    reactionWrap.classList.remove('open');
+    updateBreakdown();
+
+    layananRow.querySelectorAll('.chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        layananRow.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+        chip.classList.add('active');
+        layananRow.closest('.field').classList.remove('invalid');
+
+        const svc = list[Number(chip.dataset.idx)];
+        if (!svc) return;
+        currentService = Object.assign({}, svc, { platform });
+        jumlah.min = currentService.min;
+
+        rateHint.textContent =
+          `${fmtRp(currentService.rate)} per ${currentService.unit} · min ${currentService.min.toLocaleString('id-ID')}`;
+        restart(rateHint, 'swap');
+
+        renderQtyQuick(currentService);
+
+        reactionChoice = null;
+        reactionRow.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+        reactionWrap.classList.toggle('open', currentService.unit === 'reaction');
+
+        updateBreakdown();
+      });
+    });
+  }
+
+  setupSingleSelect(reactionRow, chip => {
+    reactionChoice = { label: chip.dataset.val, emoji: chip.dataset.emoji };
+  });
+
+  function renderQtyQuick(svc) {
+    qtyQuick.innerHTML = '';
+    svc.presets.forEach((p, i) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'qty-btn';
+      b.style.setProperty('--i', i);
+      b.textContent = p.toLocaleString('id-ID');
+      b.addEventListener('click', () => {
+        jumlah.value = p;
+        jumlah.closest('.field').classList.remove('invalid');
+        restart(jumlah, 'bump');
+        updateBreakdown();
+      });
+      qtyQuick.appendChild(b);
+    });
+  }
+
+  function getQty() {
+    const raw = jumlah.value.trim();
+    if (!/^\d+$/.test(raw)) return NaN;
+    return Number(raw);
+  }
+  function getActiveVal(row) {
+    const el = row.querySelector('.chip.active');
+    return el ? el.dataset.val : null;
+  }
+
+  /* ---------- rincian & total (angka berhitung) ---------- */
+  let shown = 0;
+  let raf = null;
+
+  function setTotal(n) {
+    cancelAnimationFrame(raf);
+    if (reduce || n === shown) {
+      shown = n;
+      bdTotal.textContent = fmtRp(n);
+      return;
+    }
+    const from = shown;
+    const delta = n - from;
+    const t0 = performance.now();
+    const dur = 420;
+    const tick = now => {
+      const p = Math.min((now - t0) / dur, 1);
+      const e = 1 - Math.pow(1 - p, 3);
+      shown = from + delta * e;
+      bdTotal.textContent = fmtRp(shown);
+      if (p < 1) {
+        raf = requestAnimationFrame(tick);
+      } else {
+        shown = n;
+        bdTotal.textContent = fmtRp(n);
+      }
+    };
+    raf = requestAnimationFrame(tick);
+  }
+
+  function updateNote() {
+    if (!currentService) {
+      bdNote.classList.add('off');
+      return;
+    }
+    bdNote.classList.remove('off');
+    bdNote.classList.toggle('perm', !!currentService.permanent);
+    bdNote.classList.toggle('nonperm', !currentService.permanent);
+    bdNoteText.textContent = permText(currentService.permanent);
+  }
+
+  function updateBreakdown() {
+    updateNote();
+    const qty = getQty();
+    bdRate.textContent = currentService ? `${fmtRp(currentService.rate)} / ${currentService.unit}` : '–';
+    if (!currentService || !Number.isFinite(qty) || qty <= 0) {
+      bdJumlah.textContent = '–';
+      setTotal(0);
+      return;
+    }
+    bdJumlah.textContent = `${qty.toLocaleString('id-ID')} ${currentService.unit}`;
+    setTotal(calcTotal(currentService, qty));
+  }
+  jumlah.addEventListener('input', updateBreakdown);
+
+  /* ---------- validasi ---------- */
+  function clearErrors() {
+    document.querySelectorAll('.field').forEach(f => f.classList.remove('invalid'));
+    document.querySelectorAll('.err').forEach(e => e.classList.remove('show'));
+  }
+
+  function validate() {
+    clearErrors();
+    void document.body.offsetWidth; // supaya animasi shake bisa diputar ulang
+    let valid = true;
+
+    const platform = getActiveVal(platformRow);
+    if (!platform) {
+      platformRow.closest('.field').classList.add('invalid');
+      $('err-platform').classList.add('show');
+      valid = false;
+    }
+    if (!currentService) {
+      layananRow.closest('.field').classList.add('invalid');
+      $('err-layanan').classList.add('show');
+      valid = false;
+    }
+
+    const qty = getQty();
+    const errJ = $('err-jumlah');
+    let msgJ = '';
+    if (!Number.isFinite(qty) || qty <= 0) {
+      msgJ = 'Jumlah harus angka bulat, minimal 1.';
+    } else if (currentService && qty < currentService.min) {
+      msgJ = `Minimal ${currentService.min.toLocaleString('id-ID')} ${currentService.unit}.`;
+    } else if (qty > MAX_QTY) {
+      msgJ = `Maksimal ${MAX_QTY.toLocaleString('id-ID')} per pesanan.`;
+    }
+    if (msgJ) {
+      jumlah.closest('.field').classList.add('invalid');
+      errJ.textContent = msgJ;
+      errJ.classList.add('show');
+      valid = false;
+    }
+
+    if (currentService && currentService.unit === 'reaction' && !reactionChoice) {
+      reactionField.classList.add('invalid');
+      $('err-reaction').classList.add('show');
+      valid = false;
+    }
+
+    if (!isHttpsUrl(target.value)) {
+      target.closest('.field').classList.add('invalid');
+      $('err-target').classList.add('show');
+      valid = false;
+    }
+
+    if (!valid) {
+      const first = document.querySelector('.field.invalid');
+      if (first) first.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'center' });
+    }
+    return valid;
+  }
+
+  /* ---------- pesan WhatsApp (format & kode tidak diubah) ---------- */
+  function buildText() {
+    // Ambil ulang dari SERVICES (frozen), bukan dari variabel/DOM yang bisa diutak-atik
+    if (!currentService) return null;
+    const platform = currentService.platform;
+    const real = findService(platform, currentService.label);
+    const qty = getQty();
+    if (!real || !Number.isFinite(qty) || qty < real.min || qty > MAX_QTY) return null;
+    if (!isHttpsUrl(target.value)) return null;
+
+    const total = calcTotal(real, qty);
+    const targetVal = target.value.trim().replace(/\s+/g, ' ').slice(0, 300);
+    const layananLabel = real.unit === 'reaction' && reactionChoice
+      ? `Reaction (${reactionChoice.label})`
+      : real.label;
+    const kode = orderCode({ platform, layanan: layananLabel, qty, total, target: targetVal });
+
+    return `*꒰꒰͡🔮 ִ ׄ SUNTIK SOSIAL MEDIA*\n\n˙ . platform/aplikasi : ${platform}\n˙ . layanan suntik : ${layananLabel}\n˙ . jumlah : ${qty.toLocaleString('id-ID')} ${real.unit}\n˙ . target : ${targetVal}\n˙ . total harga : ${fmtRp(total)}\n˙ . note : ${permText(real.permanent)}\n˙ . kode : ${kode}`;
+  }
+
+  const WA_NUMBER = ov('wa_number', '6285142017734');
+  const WA_CHANNEL = ov('wa_channel', 'https://wa.me/channel/xxxxxxxx');
+  const WA_GROUP = ov('wa_group', 'https://chat.whatsapp.com/xxxxxxxx');
+
+  let sentTimer = null;
+  orderBtn.addEventListener('click', () => {
+    if (orderBtn.classList.contains('sent')) return;
+    if (!validate()) return;
+    const text = buildText();
+    if (!text) return;
+
+    orderBtn.classList.add('sent');
+    clearTimeout(sentTimer);
+    sentTimer = setTimeout(() => orderBtn.classList.remove('sent'), 2600);
+
+    // dibuka langsung di dalam event klik supaya tidak diblokir browser
+    window.open(`https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(text)}`, '_blank', 'noopener');
+  });
+
+  /* ---------- daftar harga ---------- */
+  function renderPrices() {
+    const box = $('rateGrid');
+    if (!box) return;
+    box.innerHTML = Object.entries(SERVICES).map(([platform, list]) =>
+      `<div><div class="pl-name">${platform.replace(/\s*\(.*\)\s*$/, '')}</div>` +
+      list.map(s =>
+        `<div class="pl-row"><span>${s.label}</span><span>${fmtRp(s.rate)} <em>· min ${s.min.toLocaleString('id-ID')}</em></span></div>`
+      ).join('') + '</div>'
+    ).join('');
+  }
+  renderPrices();
+
+  /* ---------- bantuan ---------- */
+  const helpOverlay = $('helpOverlay');
+  $('helpChat').href = `https://wa.me/${WA_NUMBER}`;
+  $('helpChannel').href = WA_CHANNEL;
+  $('helpGroup').href = WA_GROUP;
+
+  function openHelp() { helpOverlay.classList.add('show'); }
+  function closeHelp() { helpOverlay.classList.remove('show'); }
+  $('helpOpen').addEventListener('click', openHelp);
+  $('helpClose').addEventListener('click', closeHelp);
+  helpOverlay.addEventListener('click', e => { if (e.target === helpOverlay) closeHelp(); });
+  $('helpTour').addEventListener('click', () => {
+    closeHelp();
+    setTimeout(openTutorial, reduce ? 0 : 350);
+  });
+  document.addEventListener('keydown', e => {
+    if (e.key !== 'Escape') return;
+    if (tutOverlay.classList.contains('show')) closeTutorial();
+    else closeHelp();
+  });
+
+  /* ---------- tutorial ---------- */
+  const tutSteps = [
+    { title: 'Cara order', body: 'Empat langkah, tidak sampai satu menit.', target: null },
+    { title: 'Pilih platform', body: 'Instagram, TikTok, atau WhatsApp.', target: 'platformRow' },
+    { title: 'Pilih layanan', body: 'Pilihannya muncul setelah platform dipilih.', target: 'layananRow' },
+    { title: 'Isi jumlah', body: 'Perhatikan minimal tiap layanan.', target: 'jumlah' },
+    { title: 'Tempel target', body: 'Link harus diawali https://', target: 'target' },
+    { title: 'Cek lalu kirim', body: 'WhatsApp terbuka dengan pesanan lengkap.', target: ['breakdownBox', 'orderBtn'] }
+  ];
+
+  let tutIndex = 0;
+  let tutBusy = false;
+  let spotlightRAF = null;
+
+  const tutOverlay = $('tutOverlay');
+  const tutHighlight = $('tutHighlight');
+  const tutContent = $('tutContent');
+  const tutTitle = $('tutTitle');
+  const tutBody = $('tutBody');
+  const tutStepLabel = $('tutStepLabel');
+  const tutBar = $('tutBar');
+  const tutBack = $('tutBack');
+  const tutNext = $('tutNext');
+
+  function renderTutStep() {
+    const step = tutSteps[tutIndex];
+    tutTitle.textContent = step.title;
+    tutBody.textContent = step.body;
+    tutStepLabel.textContent = `${tutIndex + 1} / ${tutSteps.length}`;
+    tutBar.style.width = `${((tutIndex + 1) / tutSteps.length) * 100}%`;
+    tutBack.classList.toggle('hidden', tutIndex === 0);
+    tutNext.textContent = tutIndex === tutSteps.length - 1 ? 'Mulai order' : 'Lanjut';
+    restart(tutContent, 'in');
+    moveSpotlight(step.target);
+  }
+
+  function moveSpotlight(tgt) {
+    tutHighlight.classList.remove('show');
+    if (spotlightRAF) { cancelAnimationFrame(spotlightRAF); spotlightRAF = null; }
+
+    if (!tgt) {
+      tutHighlight.classList.add('dim');
+      tutHighlight.style.top = window.innerHeight / 2 + 'px';
+      tutHighlight.style.left = window.innerWidth / 2 + 'px';
+      tutHighlight.style.width = '0px';
+      tutHighlight.style.height = '0px';
+      requestAnimationFrame(() => tutHighlight.classList.add('show'));
+      return;
+    }
+    tutHighlight.classList.remove('dim');
+
+    const ids = Array.isArray(tgt) ? tgt : [tgt];
+    // sorot seluruh field (label + isi), bukan cuma inputnya
+    const els = ids.map(id => $(id)).filter(Boolean).map(el => el.closest('.field') || el);
+    if (!els.length) return;
+
+    // modal menempel di bawah layar, jadi sisakan ruang saat scroll
+    const modal = document.querySelector('.tut-modal');
+    const modalHeight = modal ? modal.getBoundingClientRect().height : 0;
+    const safeTop = 20;
+    const safeBottom = modalHeight + 20;
+    const rects0 = els.map(el => el.getBoundingClientRect());
+    const docTop = Math.min(...rects0.map(r => r.top)) + window.scrollY;
+    const docBottom = Math.max(...rects0.map(r => r.bottom)) + window.scrollY;
+    const elHeight = docBottom - docTop;
+    const available = Math.max(window.innerHeight - safeTop - safeBottom, 50);
+    const targetScroll = elHeight <= available
+      ? docTop - safeTop - (available - elHeight) / 2
+      : docTop - safeTop;
+    window.scrollTo({ top: Math.max(targetScroll, 0), behavior: reduce ? 'auto' : 'smooth' });
+
+    // pantau posisi tiap frame supaya kotak sorot selalu pas, apa pun kecepatan scroll browser
+    const trackUntil = performance.now() + 1500;
+    function track() {
+      const rects = els.map(el => el.getBoundingClientRect());
+      const top = Math.min(...rects.map(r => r.top));
+      const left = Math.min(...rects.map(r => r.left));
+      const right = Math.max(...rects.map(r => r.right));
+      const bottom = Math.max(...rects.map(r => r.bottom));
+      const pad = 10;
+      tutHighlight.style.top = (top - pad) + 'px';
+      tutHighlight.style.left = (left - pad) + 'px';
+      tutHighlight.style.width = (right - left + pad * 2) + 'px';
+      tutHighlight.style.height = (bottom - top + pad * 2) + 'px';
+      tutHighlight.classList.add('show');
+      spotlightRAF = performance.now() < trackUntil ? requestAnimationFrame(track) : null;
+    }
+    track();
+  }
+
+  function openTutorial() {
+    tutIndex = 0;
+    renderTutStep();
+    tutOverlay.classList.add('show');
+    lockPageScroll();
+  }
+
+  function closeTutorial() {
+    tutOverlay.classList.remove('show');
+    tutHighlight.classList.remove('show');
+    if (spotlightRAF) { cancelAnimationFrame(spotlightRAF); spotlightRAF = null; }
+    try { localStorage.setItem('kayz_suntik_tutorial_seen', '1'); } catch (e) {}
+    unlockPageScroll();
+    const panel = document.querySelector('.panel');
+    const top = panel ? panel.getBoundingClientRect().top + window.scrollY - 16 : 0;
+    window.scrollTo({ top: Math.max(top, 0), behavior: reduce ? 'auto' : 'smooth' });
+  }
+
+  // selama tutorial terbuka, halaman hanya bisa digerakkan lewat tombolnya
+  function blockBackgroundScroll(e) {
+    const modal = e.target.closest ? e.target.closest('.tut-modal') : null;
+    if (modal && modal.scrollHeight > modal.clientHeight + 1) return;
+    e.preventDefault();
+  }
+  function lockPageScroll() {
+    document.addEventListener('touchmove', blockBackgroundScroll, { passive: false });
+    document.addEventListener('wheel', blockBackgroundScroll, { passive: false });
+  }
+  function unlockPageScroll() {
+    document.removeEventListener('touchmove', blockBackgroundScroll, { passive: false });
+    document.removeEventListener('wheel', blockBackgroundScroll, { passive: false });
+  }
+
+  tutNext.addEventListener('click', () => {
+    if (tutBusy) return;
+    tutBusy = true;
+    tutHighlight.classList.remove('show');
+    setTimeout(() => {
+      if (tutIndex < tutSteps.length - 1) {
+        tutIndex++;
+        renderTutStep();
+      } else {
+        closeTutorial();
+      }
+      tutBusy = false;
+    }, reduce ? 0 : 220);
+  });
+  tutBack.addEventListener('click', () => {
+    if (tutIndex > 0) {
+      tutIndex--;
+      renderTutStep();
+    }
+  });
+  $('tutSkip').addEventListener('click', closeTutorial);
+
+  try {
+    if (!localStorage.getItem('kayz_suntik_tutorial_seen')) setTimeout(openTutorial, 900);
+  } catch (e) { /* localStorage diblokir, lewati tutorial otomatis */ }
+})();
