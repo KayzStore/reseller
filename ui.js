@@ -18,7 +18,7 @@
   }
 
   /* ---------- ketukan: riak halus dari titik sentuh ---------- */
-  const TAPPABLE = '.cta, .btn, .chip, .qty-btn, .list-row, .sw, .tab, .switch-row';
+  const TAPPABLE = '.cta, .btn, .chip, .qty-btn, .list-row, .sw, .tab, .switch-row, .theme-btn';
   document.addEventListener('pointerdown', e => {
     if (motionOff() || root.dataset.ripple === 'off' || !e.target.closest) return;
     const el = e.target.closest(TAPPABLE);

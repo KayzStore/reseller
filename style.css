@@ -76,8 +76,8 @@ button { font:inherit; color:inherit; background:none; border:0; padding:0; curs
 .top {
   display:flex;
   align-items:center;
-  justify-content:space-between;
-  padding:calc(18px + env(safe-area-inset-top)) 20px 6px;
+  justify-content:flex-end;
+  padding:calc(16px + env(safe-area-inset-top)) 20px 0;
 }
 
 .wrap { padding:0 20px 128px; }
@@ -475,9 +475,6 @@ textarea#raw.wipe { opacity:0; transform:translateY(-6px) scale(.99); transition
 .res-body b { color:var(--ink); font-weight:500; }
 .res-actions { display:flex; gap:10px; margin-top:20px; }
 
-.steps { margin:22px 0 0; padding:0; list-style:none; counter-reset:s; }
-.steps li { counter-increment:s; display:flex; gap:14px; padding:9px 0; border-bottom:1px solid var(--line); font-size:14.5px; color:var(--ink-2); }
-.steps li::before { content:'0' counter(s); font:400 11px/1.9 var(--mono); color:var(--mute); }
 
 /* ketukan (ripple) */
 .ripple {
@@ -493,14 +490,30 @@ textarea#raw.wipe { opacity:0; transform:translateY(-6px) scale(.99); transition
 
 /* bulatan pilih warna */
 .theme-btn {
-  width:34px; height:34px;
+  position:relative;
+  overflow:hidden;
+  display:grid;
+  place-items:center;
+  width:42px; height:42px;
+  border-radius:50%;
+  background:var(--surface);
+  border:1px solid var(--line-2);
+  color:var(--ink);
+  transition:transform .25s var(--ease), border-color .3s;
+}
+.theme-btn svg { transition:transform .5s var(--ease); }
+.theme-btn:active { transform:scale(.9); }
+.theme-btn:active svg { transform:rotate(-14deg); }
+@media (hover:hover) { .theme-btn:hover { border-color:var(--brand); } }
+.theme-btn .badge {
+  position:absolute;
+  right:6px; bottom:6px;
+  width:11px; height:11px;
   border-radius:50%;
   background:var(--brand);
-  box-shadow:0 0 0 3px var(--bg), 0 0 0 4.5px var(--line-2);
-  transition:transform .25s var(--ease), background-color .4s, box-shadow .3s;
+  box-shadow:0 0 0 2px var(--surface);
+  transition:background-color .4s;
 }
-.theme-btn:active { transform:scale(.86); }
-.theme-btn[aria-expanded="true"] { box-shadow:0 0 0 3px var(--bg), 0 0 0 4.5px var(--brand); }
 
 /* ---------- halaman (home / warna / support) ---------- */
 .view[hidden] { display:none; }
@@ -509,7 +522,7 @@ textarea#raw.wipe { opacity:0; transform:translateY(-6px) scale(.99); transition
 @keyframes slideR { from { opacity:0; transform:translateX(34px); } to { opacity:1; transform:none; } }
 @keyframes slideL { from { opacity:0; transform:translateX(-34px); } to { opacity:1; transform:none; } }
 
-.rows .list-row:first-child { border-top:0; }
+.rows { margin-top:20px; }
 .rows .list-row:last-child { border-bottom:1px solid var(--line); }
 #linkChatNum { font-variant-numeric:tabular-nums; }
 
