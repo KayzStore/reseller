@@ -5,8 +5,8 @@ const KAYZ_PRICES = {
   ig_like_min: 10,         // minimal beli like
   ig_like_permanent: true,   // true = permanen, false = tidak permanen
 
-  ig_views_rate: 2,        // harga per 1 views (Rp)
-  ig_views_min: 100,       // minimal beli views
+  ig_views_rate: 1,        // harga per 1 views (Rp)
+  ig_views_min: 500,       // minimal beli views
   ig_views_permanent: true,   // true = permanen, false = tidak permanen
 
   ig_followers_rate: 64,   // harga per 1 followers (Rp)
