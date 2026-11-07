@@ -2,7 +2,7 @@
   'use strict';
 
   const $ = id => document.getElementById(id);
-  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const motionOff = () => window.matchMedia('(prefers-reduced-motion: motionOff())').matches || document.documentElement.dataset.motion === 'off';
 
   const platformRow = $('platformRow');
   const layananRow = $('layananRow');
@@ -154,7 +154,7 @@
 
   function setTotal(n) {
     cancelAnimationFrame(raf);
-    if (reduce || n === shown) {
+    if (motionOff() || n === shown) {
       shown = n;
       bdTotal.textContent = fmtRp(n);
       return;
@@ -257,7 +257,7 @@
 
     if (!valid) {
       const first = document.querySelector('.field.invalid');
-      if (first) first.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'center' });
+      if (first) first.scrollIntoView({ behavior: motionOff() ? 'auto' : 'smooth', block: 'center' });
     }
     return valid;
   }
@@ -327,27 +327,9 @@
   $('linkChatNum').textContent = fmtPhone(WA_NUMBER);
   $('linkChannel').href = WA_CHANNEL;
   $('linkGroup').href = WA_GROUP;
-  $('guideTour').addEventListener('click', () => openTutorial());
-
-  /* ---------- bantuan ---------- */
-  const helpOverlay = $('helpOverlay');
-  $('helpChat').href = `https://wa.me/${WA_NUMBER}`;
-  $('helpChannel').href = WA_CHANNEL;
-  $('helpGroup').href = WA_GROUP;
-
-  function openHelp() { helpOverlay.classList.add('show'); }
-  function closeHelp() { helpOverlay.classList.remove('show'); }
-  $('helpOpen').addEventListener('click', openHelp);
-  $('helpClose').addEventListener('click', closeHelp);
-  helpOverlay.addEventListener('click', e => { if (e.target === helpOverlay) closeHelp(); });
-  $('helpTour').addEventListener('click', () => {
-    closeHelp();
-    setTimeout(openTutorial, reduce ? 0 : 350);
-  });
-  document.addEventListener('keydown', e => {
-    if (e.key !== 'Escape') return;
-    if (tutOverlay.classList.contains('show')) closeTutorial();
-    else closeHelp();
+  $('guideTour').addEventListener('click', () => {
+    if (window.kayzGo) window.kayzGo('home');
+    setTimeout(openTutorial, motionOff() ? 0 : 420);
   });
 
   /* ---------- tutorial ---------- */
@@ -419,7 +401,7 @@
     const targetScroll = elHeight <= available
       ? docTop - safeTop - (available - elHeight) / 2
       : docTop - safeTop;
-    window.scrollTo({ top: Math.max(targetScroll, 0), behavior: reduce ? 'auto' : 'smooth' });
+    window.scrollTo({ top: Math.max(targetScroll, 0), behavior: motionOff() ? 'auto' : 'smooth' });
 
     // pantau posisi tiap frame supaya kotak sorot selalu pas, apa pun kecepatan scroll browser
     const trackUntil = performance.now() + 1500;
@@ -455,7 +437,7 @@
     unlockPageScroll();
     const panel = document.querySelector('.panel');
     const top = panel ? panel.getBoundingClientRect().top + window.scrollY - 16 : 0;
-    window.scrollTo({ top: Math.max(top, 0), behavior: reduce ? 'auto' : 'smooth' });
+    window.scrollTo({ top: Math.max(top, 0), behavior: motionOff() ? 'auto' : 'smooth' });
   }
 
   // selama tutorial terbuka, halaman hanya bisa digerakkan lewat tombolnya
@@ -485,7 +467,7 @@
         closeTutorial();
       }
       tutBusy = false;
-    }, reduce ? 0 : 220);
+    }, motionOff() ? 0 : 220);
   });
   tutBack.addEventListener('click', () => {
     if (tutIndex > 0) {
@@ -494,8 +476,12 @@
     }
   });
   $('tutSkip').addEventListener('click', closeTutorial);
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && tutOverlay.classList.contains('show')) closeTutorial();
+  });
 
   try {
-    if (!localStorage.getItem('kayz_suntik_tutorial_seen')) setTimeout(openTutorial, 900);
+    const homeView = $('view-home');
+    if (!localStorage.getItem('kayz_suntik_tutorial_seen') && homeView && !homeView.hidden) setTimeout(openTutorial, 900);
   } catch (e) { /* localStorage diblokir, lewati tutorial otomatis */ }
 })();
