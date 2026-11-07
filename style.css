@@ -482,6 +482,15 @@ textarea#raw.wipe { opacity:0; transform:translateY(-6px) scale(.99); transition
 .res-body b { color:var(--ink); font-weight:500; }
 .res-actions { display:flex; gap:10px; margin-top:20px; }
 
+.links { margin-top:30px; }
+.links .list-row:last-child { border-bottom:1px solid var(--line); }
+.links .list-row #linkChatNum { font-variant-numeric:tabular-nums; }
+.guide { margin:0 0 10px; }
+.steps { margin:6px 0 10px; padding:0; list-style:none; counter-reset:s; }
+.steps li { counter-increment:s; display:flex; gap:14px; padding:9px 0; border-bottom:1px solid var(--line); font-size:14.5px; color:var(--ink-2); }
+.steps li::before { content:'0' counter(s); font:400 11px/1.9 var(--mono); color:var(--mute); }
+.guide[open] .steps, .guide[open] .link-btn { animation:fadeUp .45s var(--ease); }
+
 @media (prefers-reduced-motion:reduce) {
   *, *::before, *::after {
     animation-duration:.01ms !important;

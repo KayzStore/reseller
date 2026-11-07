@@ -314,6 +314,21 @@
   }
   renderPrices();
 
+  /* ---------- panduan, kontak, komunitas ---------- */
+  function fmtPhone(n) {
+    const d = String(n).replace(/\D/g, '');
+    if (d.startsWith('62')) {
+      const r = d.slice(2);
+      return '+62 ' + r.slice(0, 3) + '-' + r.slice(3, 7) + '-' + r.slice(7);
+    }
+    return '+' + d;
+  }
+  $('linkChat').href = `https://wa.me/${WA_NUMBER}`;
+  $('linkChatNum').textContent = fmtPhone(WA_NUMBER);
+  $('linkChannel').href = WA_CHANNEL;
+  $('linkGroup').href = WA_GROUP;
+  $('guideTour').addEventListener('click', () => openTutorial());
+
   /* ---------- bantuan ---------- */
   const helpOverlay = $('helpOverlay');
   $('helpChat').href = `https://wa.me/${WA_NUMBER}`;
