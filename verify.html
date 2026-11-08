@@ -2,189 +2,131 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="color-scheme" content="light dark">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex">
 <title>KAYZ — Cek Pesanan</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css">
-<script>try{var d=document.documentElement,s=localStorage;['brand','motion','ripple'].forEach(function(k){var v=s.getItem('kayz_'+k);if(v)d.setAttribute('data-'+k,v)})}catch(e){}</script>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600&display=swap">
+<style>
+:root{--bg:#0f0f10;--card:#1a1b19;--line:#2a2b28;--text:#f0ede6;--muted:#a09d94;--accent:#d4795a;--ok:#7bc79a;--bad:#e5645a}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,sans-serif}
+.wrap{max-width:520px;margin:0 auto;padding:28px 20px 60px}
+h1{font:400 54px/1.05 'Instrument Serif',Georgia,serif;margin:40px 0 28px}
+h1 em{color:var(--accent)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:28px;padding:24px}
+label{display:block;font-weight:600;font-size:17px;margin-bottom:12px}
+textarea{width:100%;min-height:220px;background:#101010;color:var(--text);border:1px solid #555;border-radius:18px;padding:14px;font:14px/1.5 ui-monospace,Menlo,monospace;resize:vertical}
+textarea:focus{outline:none;border-color:var(--text)}
+button{font:500 17px Inter,sans-serif;border-radius:999px;padding:18px;cursor:pointer;border:1px solid var(--line)}
+.primary{background:#f0ede6;color:#111;width:100%;margin-top:18px}
+.ghost{background:transparent;color:var(--muted)}
+#res{display:none;margin-top:24px;padding-top:24px;border-top:1px solid var(--line)}
+#res.show{display:block}
+.head{display:flex;align-items:center;gap:14px;font:400 36px 'Instrument Serif',Georgia,serif}
+.badge{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;font:600 22px Inter,sans-serif;color:#111}
+.ok .badge{background:var(--ok)}.bad .badge{background:var(--bad)}
+.info{margin:16px 0 0;color:var(--muted);font-size:17px;line-height:1.7}
+.info b{color:var(--text)}
+.target{margin-top:10px;font:15px/1.5 ui-monospace,Menlo,monospace;word-break:break-all}
+.problems{margin:14px 0 0;padding-left:18px;color:var(--muted);line-height:1.7}
+.row{display:flex;gap:12px;margin-top:20px}
+.row button{flex:1}
+</style>
 </head>
 <body>
-
-<header class="top">
-  <a class="logo" href="./">kayz<i>.</i></a>
-  <span class="tag">Cek pesanan</span>
-</header>
-
-<main class="wrap">
-  <section class="hero rise" style="--i:0">
-    <h1>Pesanan asli<br><em>atau diubah?</em></h1>
-  </section>
-
-  <section class="panel rise" style="--i:1">
-    <div class="field" id="rawField">
-      <label class="lbl" for="raw">Pesan pembeli</label>
-      <textarea id="raw" placeholder="Tempel pesan di sini" autocomplete="off" autocapitalize="off" spellcheck="false"></textarea>
-    </div>
-
-    <button class="cta" id="checkBtn" type="button" style="margin-top:0">
-      <span class="cta-a">Cek pesanan</span>
-      <span class="cta-b">
-        <svg class="chk" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" pathLength="1"/></svg>
-        Chat dihapus
-      </span>
-    </button>
-
-    <div class="res" id="out" aria-live="polite"></div>
-  </section>
-</main>
+<div class="wrap">
+  <h1>Pesanan asli<br><em>atau diubah?</em></h1>
+  <div class="card">
+    <label for="raw">Pesan pembeli</label>
+    <textarea id="raw" placeholder="Tempel pesan di sini"></textarea>
+    <button class="primary" id="checkBtn">Cek pesanan</button>
+    <div id="res"></div>
+  </div>
+</div>
 
 <script src="prices.js"></script>
 <script src="core.js"></script>
-<script src="ui.js"></script>
 <script>
-(() => {
-  'use strict';
-
-  const $ = id => document.getElementById(id);
-  const raw = $('raw');
-  const out = $('out');
-  const btn = $('checkBtn');
-  const motionOff = () => window.matchMedia('(prefers-reduced-motion: motionOff())').matches || document.documentElement.dataset.motion === 'off';
-
-  const ICON_OK  = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5" pathLength="1"/></svg>';
-  const ICON_BAD = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 6.5v7M12 17.5h.01" pathLength="1"/></svg>';
-
+function line(text, label){
   // label harus ada di AWAL baris (setelah simbol), jadi isi target tidak bisa menyamar sebagai baris lain
-  function line(text, label) {
-    const re = new RegExp('^[^\\w\\n]*' + label + '\\s*:\\s*(.+?)\\s*$', 'mi');
-    const m = text.match(re);
-    return m ? m[1] : null;
+  const re = new RegExp('^[^\\w\\n]*' + label + '\\s*:\\s*(.+?)\\s*$', 'mi');
+  const m = text.match(re);
+  return m ? m[1] : null;
+}
+function digits(s){ return Number(String(s).replace(/[^\d]/g, '')); }
+function esc(s){ return String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+const raw = document.getElementById('raw');
+const res = document.getElementById('res');
+
+function check(){
+  const text = raw.value;
+  const platform = line(text, 'platform\\/aplikasi');
+  const layanan  = line(text, 'layanan suntik');
+  const jumlahS  = line(text, 'jumlah');
+  const targetV  = line(text, 'target');
+  const totalS   = line(text, 'total harga');
+  const kode     = line(text, 'kode');
+  const problems = [];
+
+  if(!platform || !layanan || !jumlahS || !targetV || !totalS){
+    problems.push('Format pesan tidak lengkap / tidak dikenali (kemungkinan diedit manual).');
   }
-  function digits(s) { return Number(String(s).replace(/[^\d]/g, '')); }
-  function esc(s) { return String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
-
-  function restart(el, cls) {
-    el.classList.remove(cls);
-    void el.offsetWidth;
-    el.classList.add(cls);
-  }
-
-  // hapus isi chat dari kolom (dengan animasi singkat)
-  function wipeChat() {
-    if (!raw.value) return;
-    if (motionOff()) { raw.value = ''; return; }
-    raw.classList.add('wipe');
-    setTimeout(() => {
-      raw.value = '';
-      raw.classList.remove('wipe');
-    }, 360);
-  }
-
-  function resetAll() {
-    out.classList.remove('show');
-    out.innerHTML = '';
-    raw.value = '';
-    raw.focus();
-  }
-
-  btn.addEventListener('click', () => {
-    const text = raw.value;
-    const field = $('rawField');
-
-    if (!text.trim()) {
-      restart(field, 'invalid');
-      raw.focus();
-      setTimeout(() => field.classList.remove('invalid'), 900);
-      return;
+  let expected = null, claimed = null, qty = null;
+  if(platform && layanan && jumlahS && totalS){
+    qty = digits(jumlahS);
+    claimed = digits(totalS);
+    const label = layanan.replace(/\s*\(.*\)\s*$/, '');
+    const svc = findService(platform, label);
+    if(!svc){
+      problems.push('Platform/layanan tidak ada di daftar harga.');
+    } else {
+      expected = calcTotal(svc, qty);
+      if(qty < svc.min) problems.push(`Jumlah di bawah minimal (${svc.min}).`);
+      if(qty > MAX_QTY) problems.push('Jumlah melebihi batas per pesanan.');
+      if(claimed !== expected) problems.push(`Total harga TIDAK cocok. Di pesan: ${fmtRp(claimed)}, seharusnya: ${fmtRp(expected)}.`);
     }
-
-    const platform = line(text, 'platform\\/aplikasi');
-    const layanan  = line(text, 'layanan suntik');
-    const jumlahS  = line(text, 'jumlah');
-    const targetV  = line(text, 'target');
-    const totalS   = line(text, 'total harga');
-    const kode     = line(text, 'kode');
-    const problems = [];
-
-    if (!platform || !layanan || !jumlahS || !targetV || !totalS) {
-      problems.push('Format pesan tidak lengkap atau tidak dikenali (kemungkinan diedit manual).');
+    if(!isHttpsUrl(targetV)) problems.push('Target bukan link https:// yang valid.');
+    if(!kode){
+      problems.push('Kode verifikasi tidak ada.');
+    } else {
+      const want = orderCode({platform, layanan, qty, total: claimed, target: targetV});
+      if(want !== kode) problems.push('Kode verifikasi tidak valid (isi pesan diubah setelah dibuat).');
     }
+  }
 
-    let expected = null, claimed = null, qty = null;
-    if (platform && layanan && jumlahS && totalS) {
-      qty = digits(jumlahS);
-      claimed = digits(totalS);
-      const label = layanan.replace(/\s*\(.*\)\s*$/, '');
-      const svc = findService(platform, label);
-      if (!svc) {
-        problems.push('Platform/layanan tidak ada di daftar harga.');
-      } else {
-        expected = calcTotal(svc, qty);
-        if (qty < svc.min) problems.push(`Jumlah di bawah minimal (${svc.min}).`);
-        if (qty > MAX_QTY) problems.push('Jumlah melebihi batas per pesanan.');
-        if (claimed !== expected) problems.push(`Total tidak cocok. Di pesan ${fmtRp(claimed)}, seharusnya ${fmtRp(expected)}.`);
+  const ok = problems.length === 0;
+  res.className = 'show ' + (ok ? 'ok' : 'bad');
+  if(ok){
+    res.innerHTML =
+      `<div class="head"><span class="badge">✓</span>Pesanan asli</div>` +
+      `<p class="info">Total <b>${fmtRp(expected)}</b> sesuai daftar harga.<br>Jumlah <b>${esc(jumlahS)}</b></p>` +
+      `<div class="target">${esc(targetV)}</div>` +
+      `<div class="row"><button class="primary" style="margin:0" id="copyBtn">Salin target</button><button class="ghost" id="againBtn">Cek lagi</button></div>`;
+    document.getElementById('copyBtn').addEventListener('click', async e => {
+      const btn = e.currentTarget;
+      try{ await navigator.clipboard.writeText(targetV); }
+      catch(err){
+        const ta = document.createElement('textarea');
+        ta.value = targetV; document.body.appendChild(ta); ta.select();
+        document.execCommand('copy'); ta.remove();
       }
-      if (!isHttpsUrl(targetV)) problems.push('Target bukan link https:// yang valid.');
-      if (!kode) {
-        problems.push('Kode verifikasi tidak ada.');
-      } else {
-        const want = orderCode({ platform, layanan, qty, total: claimed, target: targetV });
-        if (want !== kode) problems.push('Kode verifikasi tidak valid (isi pesan diubah setelah dibuat).');
-      }
-    }
-
-    const ok = problems.length === 0;
-
-    out.className = 'res ' + (ok ? 'ok' : 'bad');
-    out.innerHTML =
-      `<div class="res-head"><span class="ico">${ok ? ICON_OK : ICON_BAD}</span><h2>${ok ? 'Pesanan asli' : 'Mencurigakan'}</h2></div>` +
-      '<div class="res-body">' +
-        (ok
-          ? `Total <b>${fmtRp(expected)}</b> sesuai daftar harga.<span class="tgt">${esc(targetV)}</span>`
-          : '<ul>' + problems.map(p => `<li>${esc(p)}</li>`).join('') + '</ul>' +
-            (expected !== null ? `<div style="margin-top:8px">Harga yang benar: <b>${fmtRp(expected)}</b></div>` : '')) +
-      '</div>' +
-      '<div class="res-actions">' +
-        (ok ? '<button class="btn solid" id="copyBtn" type="button">Salin target</button>' : '') +
-        '<button class="btn ghost" id="resetBtn" type="button">Cek lagi</button>' +
-      '</div>';
-    restart(out, 'show');
-
-    $('resetBtn').addEventListener('click', resetAll);
-
-    if (ok) {
-      const copyBtn = $('copyBtn');
-      let copyTimer = null;
-      copyBtn.addEventListener('click', async () => {
-        try {
-          await navigator.clipboard.writeText(targetV);
-        } catch (err) {
-          const ta = document.createElement('textarea');
-          ta.value = targetV;
-          document.body.appendChild(ta);
-          ta.select();
-          document.execCommand('copy');
-          ta.remove();
-        }
-        copyBtn.textContent = 'Tersalin';
-        clearTimeout(copyTimer);
-        copyTimer = setTimeout(() => { copyBtn.textContent = 'Salin target'; }, 1500);
-      });
-    }
-
-    // setelah dicek, semua chat langsung dihapus dari kolom
-    wipeChat();
-    btn.classList.add('sent');
-    setTimeout(() => btn.classList.remove('sent'), 2000);
+      btn.textContent = '✓ Tersalin';
+      setTimeout(() => btn.textContent = 'Salin target', 1500);
+    });
+  } else {
+    res.innerHTML =
+      `<div class="head"><span class="badge">!</span>Mencurigakan</div>` +
+      `<ul class="problems">${problems.map(p => '<li>' + esc(p) + '</li>').join('')}</ul>` +
+      (expected !== null ? `<p class="info">Harga yang benar: <b>${fmtRp(expected)}</b></p>` : '') +
+      `<div class="row"><button class="ghost" id="againBtn">Cek lagi</button></div>`;
+  }
+  document.getElementById('againBtn').addEventListener('click', () => {
+    raw.value = ''; res.className = ''; res.innerHTML = ''; raw.focus();
   });
-
-  // jangan biarkan isi chat tertinggal saat halaman ditutup / pindah tab
-  window.addEventListener('pagehide', () => { raw.value = ''; });
-})();
+}
+document.getElementById('checkBtn').addEventListener('click', check);
 </script>
 </body>
 </html>
