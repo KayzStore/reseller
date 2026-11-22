@@ -23,7 +23,7 @@ const KAYZ_PRICES = {
   tt_views_min: 500,
   tt_views_permanent: true,
 
-  tt_followers_rate: 64,
+  tt_followers_rate: 65,
   tt_followers_min: 100,
   tt_followers_permanent: false,
 
